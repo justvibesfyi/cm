@@ -1,0 +1,11 @@
+# Bun configuration file
+
+[test]
+# Set environment variables for tests
+env = { DATABASE_URL = "sqlite::memory:" }
+
+# Test file patterns
+include = ["**/*.test.ts", "**/*.spec.ts"]
+
+# Test timeout
+timeout = 5000

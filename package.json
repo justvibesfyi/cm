@@ -1,0 +1,36 @@
+{
+  "name": "chatmesh-backend",
+  "version": "1.0.0",
+  "description": "ChatMesh Backend - Multi-platform messaging aggregation system",
+  "module": "server/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --bun run --watch back/index.ts",
+    "start": "bun --bun run back/index.ts",
+    "build": "bun --bun build index.ts --outdir ./dist --target bun"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.2",
+    "email-validator": "^2.0.4",
+    "hono": "^4.9.6",
+    "mailgun.js": "^12.0.3",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "bun": ">=1.2.21"
+  },
+  "keywords": [
+    "messaging",
+    "chat",
+    "telegram",
+    "zalo",
+    "backend",
+    "api",
+    "websocket"
+  ]
+}
