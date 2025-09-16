@@ -3,7 +3,7 @@ import type {
 	ConnectionStatus,
 	PlatformLink,
 	SendResult,
-} from "../services/interfaces";
+} from "../svc/interfaces";
 import type {
 	OutboundMessage,
 	PlatformConfig,

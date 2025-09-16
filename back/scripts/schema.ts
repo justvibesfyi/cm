@@ -3,7 +3,7 @@
  * Database schema inspection script
  */
 
-import { getDatabase } from '../src/database/index.js';
+import { getDatabase } from '../database/index';
 
 const db = getDatabase();
 

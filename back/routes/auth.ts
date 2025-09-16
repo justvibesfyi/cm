@@ -74,7 +74,7 @@ export const authRoutes = new Hono()
 
         if (!sess) return c.json({ error: "Not logged in" }, 401);
 
-        const user = await auth.getSessionUser(sess);
+        const user = await auth.getSessionEmployee(sess);
 
         if (!user) {
             deleteCookie(c, "session");

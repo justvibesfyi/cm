@@ -1,5 +1,5 @@
 // Platform-specific configuration interfaces
-import type { PlatformConfig } from '../types/index.js';
+import type { PlatformConfig } from '../types/index';
 
 // Telegram configuration
 export interface TelegramConfig extends PlatformConfig {

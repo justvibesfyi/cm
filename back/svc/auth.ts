@@ -2,12 +2,13 @@
 
 import { sql } from "bun";
 import { useEmail } from "./email";
+import useEmployee from "./employee";
 
 function useAuth() {
 
   const checkCodeExists = async (email: string) => {
     const res = await sql`
-      SELECT COUNT(*) as cnt FROM auth_codes WHERE email = ${email} AND created_at > datetime('now', '-1 minute');
+      SELECT COUNT(*) as cnt FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-1 minute');
     `.then((res) => res[0]);
 
     return res.cnt > 0;
@@ -23,16 +24,16 @@ function useAuth() {
 
   const setCode = async (email: string, code: string) => {
     await sql`
-      DELETE FROM auth_codes WHERE email = ${email}
+      DELETE FROM auth_code WHERE email = ${email}
     `;
     await sql`
-      INSERT INTO auth_codes (email, code) VALUES (${email}, ${code});
+      INSERT INTO auth_code (email, code) VALUES (${email}, ${code});
     `;
   }
 
   const getCode = async (email: string) => {
     const res = await sql`
-      SELECT code FROM auth_codes WHERE email = ${email} AND created_at > datetime('now', '-1 minute')
+      SELECT code FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-1 minute')
     `.then(res => res[0]);
 
     return res?.code || '';
@@ -43,7 +44,7 @@ function useAuth() {
     const res = await sql.begin(async (sql) => {
 
       const res = await sql`
-        SELECT count(*) as count FROM auth_codes WHERE email = ${email} AND created_at > datetime('now', '-1 minute');
+        SELECT count(*) as count FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-1 minute');
       `.then((res) => res[0]);
 
       console.log(res)
@@ -53,7 +54,7 @@ function useAuth() {
       }
 
       await sql`
-        DELETE FROM auth_codes WHERE email = ${email};
+        DELETE FROM auth_code WHERE email = ${email};
       `;
 
       return res?.count || 0;
@@ -89,39 +90,37 @@ function useAuth() {
     // check if user is already registered
 
     const user = await sql`
-      SELECT * FROM users WHERE email = $email;
+      SELECT * FROM employee WHERE email = $email;
     `.then((res) => res[0]);
 
     // if no, then add a user
     if (!user) {
-      const userId = crypto.randomUUID();
-      await sql`
-        INSERT INTO users (id, email) VALUES (${userId}, ${email});
-      `;
+      const employee = useEmployee();
+      await employee.createEmployee(email);
     }
 
     // then create a session
-
     await sql`
-    DELETE FROM sessions WHERE user_id = (SELECT id FROM users WHERE email = ${email});
+      DELETE FROM session WHERE employee_id = (SELECT id FROM employee WHERE email = ${email});
     `;
 
     const sessionId = crypto.randomUUID();
     await sql`
-      INSERT INTO sessions (id, user_id, expires_at) VALUES (${sessionId}, (SELECT id FROM users WHERE email = ${email}), datetime('now', '+30 days'));
+      INSERT INTO session (id, employee_id, expires_at) VALUES (${sessionId}, (SELECT id FROM employee WHERE email = ${email}), datetime('now', '+30 days'));
     `;
     return sessionId;
   }
 
-  const getSessionUser = async (sessionId: string) => {
+  const getSessionEmployee = async (sessionId: string) => {
     const user = await sql`
-      SELECT firstName, lastName, email, onboarded, users.avatar
-      FROM sessions
-        LEFT JOIN users ON sessions.user_id = users.id
-        LEFT JOIN company ON users.company_id = company.id
-      WHERE sessions.id = ${sessionId}
-      AND sessions.expires_at > datetime('now');
-    `.then((res) => res[0]);
+      SELECT email, first_name as firstName, last_name as lastName, onboarded
+      FROM employee
+      LEFT JOIN session ON employee.id = session.employee_id
+      WHERE session.id = ${sessionId} AND session.expires_at > datetime('now')
+      ;
+    `.then(res => res[0]);
+
+    console.log(user)
 
     return user as {
       firstName: string,
@@ -133,9 +132,12 @@ function useAuth() {
 
   const logoutSession = async (email: string, sessionId: string) => {
     const result = await sql`
-      DELETE FROM sessions WHERE user_id = (SELECT id from users WHERE email = ${email}) AND id = ${sessionId}
-      RETURNING changes() as c
+      DELETE FROM session
+      WHERE employee_id = (SELECT id FROM employee WHERE email = ${email}) AND id = ${sessionId}
+      RETURNING CHANGES() as c;
     `.then(res => res[0]);
+
+    console.log(result)
 
     return !!result?.c;
   }
@@ -149,7 +151,7 @@ function useAuth() {
     sendCodeEmail,
     finalizeLogin,
     logoutSession,
-    getSessionUser
+    getSessionEmployee
   }
 }
 

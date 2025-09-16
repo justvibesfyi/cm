@@ -1,6 +1,6 @@
 import formData from "form-data";
 import Mailgun from "mailgun.js";
-import { config } from "../src/config/index";
+import { config } from "../config/index";
 import type { EmailSendResult, EmailTemplate } from "./interfaces";
 
 // Mailgun client singleton

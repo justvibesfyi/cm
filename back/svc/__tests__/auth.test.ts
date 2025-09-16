@@ -7,7 +7,7 @@ import {
 	test,
 } from "bun:test";
 import { sql } from "bun";
-import { initializeApp } from "../../src/database/index.js";
+import { initializeApp } from "../../database";
 import useAuth from "../auth.js";
 
 describe("useAuth", () => {
@@ -15,10 +15,10 @@ describe("useAuth", () => {
 	let auth: ReturnType<typeof useAuth>;
 
 	beforeAll(async () => {
-		process.env.DATABASE_URL = "sqlite:./temp.db";
+		process.env.DATABASE_URL = "sqlite::memory:";
 
 		await initializeApp();
-        
+
 		auth = useAuth();
 	});
 
@@ -33,9 +33,9 @@ describe("useAuth", () => {
 
 	beforeEach(async () => {
 		// Clean up tables before each test
-		await sql`DELETE FROM auth_codes`;
-		await sql`DELETE FROM sessions`;
-		await sql`DELETE FROM agents`;
+		await sql`DELETE FROM auth_code`;
+		await sql`DELETE FROM session`;
+		await sql`DELETE FROM employee`;
 	});
 
 	describe("generateCode", () => {
@@ -63,40 +63,40 @@ describe("useAuth", () => {
 			const email = "test@example.com";
 			const code = "123456";
 
-			await auth.setCode(email, code)
-            const returnCode = await auth.getCode(email);
+			await auth.setCode(email, code);
+			const returnCode = await auth.getCode(email);
 
-            console.log(returnCode)
+			console.log(returnCode);
 
 			expect(returnCode).toBe(code);
 		});
-        
 
-        test("Create a new table, insert a row and retrieve it", async () => {
+		test("Create a new table, insert a row and retrieve it", async () => {
 			const tableName = `temp_test`;
-            
+
 			// Create table
 			await sql`CREATE TABLE temp_test (
 				id INTEGER PRIMARY KEY,
 				name TEXT,
 				value INTEGER
 			)`;
-			
+
 			// Insert row
 			const testName = "test_item";
 			const testValue = 42;
 			await sql`INSERT INTO temp_test (name, value) VALUES (${testName}, ${testValue})`;
-			
+
 			// Retrieve row
-			const result = await sql`SELECT * FROM temp_test WHERE name = ${testName}`;
-			
+			const result =
+				await sql`SELECT * FROM temp_test WHERE name = ${testName}`;
+
 			expect(result).toHaveLength(1);
 			expect(result[0].name).toBe(testName);
 			expect(result[0].value).toBe(testValue);
-			
+
 			// Clean up
 			await sql`DROP TABLE ${sql(tableName)}`;
-        })
+		});
 
 		test("should replace existing code for same email", async () => {
 			const email = "test@example.com";
@@ -110,7 +110,7 @@ describe("useAuth", () => {
 			await auth.setCode(email, newCode);
 
 			const result = await sql`
-        SELECT email, code FROM auth_codes WHERE email = ${email}
+        SELECT email, code FROM auth_code WHERE email = ${email}
       `;
 
 			expect(result).toHaveLength(1);
@@ -127,7 +127,7 @@ describe("useAuth", () => {
 			await auth.setCode(email2, code2);
 
 			const result = await sql`
-        SELECT email, code FROM auth_codes ORDER BY email
+        SELECT email, code FROM auth_code ORDER BY email
       `;
 
 			expect(result).toHaveLength(2);
@@ -164,7 +164,7 @@ describe("useAuth", () => {
 
 			// Insert code with old timestamp (2 minutes ago)
 			await sql`
-        INSERT INTO auth_codes (email, code, created_at) 
+        INSERT INTO auth_code (email, code, created_at) 
         VALUES (${email}, ${code}, datetime('now', '-2 minutes'))
       `;
 
@@ -179,7 +179,7 @@ describe("useAuth", () => {
 
 			// Insert code with timestamp 30 seconds ago
 			await sql`
-        INSERT INTO auth_codes (email, code, created_at) 
+        INSERT INTO auth_code (email, code, created_at) 
         VALUES (${email}, ${code}, datetime('now', '-30 seconds'))
       `;
 
@@ -196,24 +196,24 @@ describe("useAuth", () => {
 			// Set code for email1 only
 			await auth.setCode(email1, code);
 
-			const exists1 = await auth.checkCodeExists(email1)
+			const exists1 = await auth.checkCodeExists(email1);
 			const exists2 = await auth.checkCodeExists(email2);
 
 			expect(exists1).toBe(true);
 			expect(exists2).toBe(false);
 		});
 
-        test("use code invalidates it", async () => {
-            const email = "test@example.com";
-            const code = "123456";
+		test("use code invalidates it", async () => {
+			const email = "test@example.com";
+			const code = "123456";
 
-            await auth.setCode(email, code);
-            const exists = await auth.useCode(email);
-            expect(exists).toBe(true);
+			await auth.setCode(email, code);
+			const exists = await auth.useCode(email);
+			expect(exists).toBe(true);
 
-            const existsAfterUse = await auth.useCode(email);
-            expect(existsAfterUse).toBe(false);
-        })
+			const existsAfterUse = await auth.useCode(email);
+			expect(existsAfterUse).toBe(false);
+		});
 	});
 
 	describe("logoutSession", () => {
@@ -221,23 +221,36 @@ describe("useAuth", () => {
 			const email = "test@example.com";
 			const code = "123456";
 
+			const email2 = "test2@example.com";
+			const code2 = "654321";
+
 			// Set up user and session through login flow
 			await auth.setCode(email, code);
-			const sessionId = await auth.finalizeLogin(email, code);
+			await auth.setCode(email2, code2);
 
-			if(!sessionId) throw new Error("Session ID not found");
-			await auth.getSessionUser(sessionId);
-			
+			const sessionId = await auth.finalizeLogin(email, code);
+			const sessionId2 = await auth.finalizeLogin(email2, code2);
+
+			expect(sessionId).not.toBe(false);
+			expect(sessionId2).not.toBe(false);
+			if (sessionId === false || sessionId2 === false)
+				return;
+
+			const user = await auth.getSessionEmployee(sessionId);
+			const user2 = await auth.getSessionEmployee(sessionId2);
+
+			expect(user).toBeDefined();
+			expect(user2).toBeDefined();
+
 			// Logout
 			const result = await auth.logoutSession(email, sessionId);
-
 			expect(result).toBe(true);
 
-			// Verify session is removed
-			const sessionsAfter = await sql`
-				SELECT * FROM sessions WHERE id = ${sessionId}
-			`;
-			expect(sessionsAfter).toHaveLength(0);
+			const user1_again = await auth.getSessionEmployee(sessionId);
+			const user2_again = await auth.getSessionEmployee(sessionId2);
+
+			expect(user1_again).not.toBeDefined();
+			expect(user2_again).toBeDefined();
 		});
 
 		test("should return false for non-existent user", async () => {
