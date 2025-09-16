@@ -243,7 +243,7 @@ describe("useAuth", () => {
 			expect(user2).toBeDefined();
 
 			// Logout
-			const result = await auth.logoutSession(email, sessionId);
+			const result = await auth.logoutEmployee(sessionId);
 			expect(result).toBe(true);
 
 			const user1_again = await auth.getSessionEmployee(sessionId);
@@ -257,7 +257,7 @@ describe("useAuth", () => {
 			const email = "nonexistent@example.com";
 			const sessionId = "fake-session-id";
 
-			const result = await auth.logoutSession(email, sessionId);
+			const result = await auth.logoutEmployee(sessionId);
 
 			expect(result).toBe(false);
 		});

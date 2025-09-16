@@ -1,17 +1,15 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 
-import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { deleteCookie, setCookie } from "hono/cookie";
 import z from "zod";
 import useAuth from "../svc/auth";
+import useEmployee from "../svc/employee";
+import requiresAuth from "./middleware/requiresAuth";
 
 const loginSchema = z.object({
     email: z.email(),
 });
-
-const logoutSchema = z.object({
-    email: z.email(),
-})
 
 const validationSchema = z.object({
     email: z.email(),
@@ -19,29 +17,15 @@ const validationSchema = z.object({
 });
 
 export const authRoutes = new Hono()
-    .get("/logout", zValidator('json', logoutSchema), async (c) => {
-        const auth = useAuth();
-
-        const { email } = c.req.valid('json')
-
-        const sess = getCookie(c, "session");
-
-        if (!sess) return c.redirect('/');
-
-        await auth.logoutSession(email, sess);
-        deleteCookie(c, "session");
-
-        return c.redirect("/login");
-    })
     .post("/start-login", zValidator("json", loginSchema), async (c) => {
         const auth = useAuth();
 
-        const { email } = c.req.valid('json')
+        const { email } = c.req.valid("json");
 
         const res = await auth.sendCodeEmail(email);
 
         if (res === false) {
-            return c.json({ error: "Try again in 1 minute" }, 422)
+            return c.json({ error: "Try again in 1 minute" }, 422);
         }
 
         return c.json({ ok: true }, 200);
@@ -49,7 +33,7 @@ export const authRoutes = new Hono()
     .post("/verify-login", zValidator("json", validationSchema), async (c) => {
         const auth = useAuth();
 
-        const { email, code } = c.req.valid('json')
+        const { email, code } = c.req.valid("json");
 
         const sessId = await auth.finalizeLogin(email, code);
 
@@ -65,21 +49,20 @@ export const authRoutes = new Hono()
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
         });
 
-        return c.redirect('/app');
+        return c.redirect("/app");
     })
-    .get("/me", async (c) => {
+    .get("/me", requiresAuth, async (c) => {
+
+        const emp = useEmployee();
+        const employeeData = await emp.getEmployee(c.var.user.id);
+
+        return c.json(employeeData);
+    })
+    .get("/logout", requiresAuth, async (c) => {
         const auth = useAuth();
 
-        const sess = getCookie(c, "session");
+        await auth.logoutEmployee(c.var.user.id)
+        deleteCookie(c, "session");
 
-        if (!sess) return c.json({ error: "Not logged in" }, 401);
-
-        const user = await auth.getSessionEmployee(sess);
-
-        if (!user) {
-            deleteCookie(c, "session");
-            return c.json({ error: "Not found" }, 404);
-        }
-
-        return c.json(user);
-    })
+        return c.redirect("/login");
+    });

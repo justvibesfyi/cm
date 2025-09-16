@@ -111,33 +111,30 @@ function useAuth() {
     return sessionId;
   }
 
-  const getSessionEmployee = async (sessionId: string) => {
-    const user = await sql`
-      SELECT email, first_name as firstName, last_name as lastName, onboarded
+  const getSessionUserId = async (sessionId: string) => {
+    const basic = await sql`
+      SELECT employee.id, employee.email
       FROM employee
-      LEFT JOIN session ON employee.id = session.employee_id
+        LEFT JOIN session ON employee.id = session.employee_id
       WHERE session.id = ${sessionId} AND session.expires_at > datetime('now')
       ;
     `.then(res => res[0]);
 
-    console.log(user)
+    if (!basic)
+      return undefined;
 
-    return user as {
-      firstName: string,
-      lastName: string,
+    return basic as {
+      id: string,
       email: string,
-      onboarded: boolean
     };
   }
 
-  const logoutSession = async (email: string, sessionId: string) => {
+  const logoutEmployee = async (sessionId: string) => {
     const result = await sql`
       DELETE FROM session
-      WHERE employee_id = (SELECT id FROM employee WHERE email = ${email}) AND id = ${sessionId}
+      WHERE id = ${sessionId}
       RETURNING CHANGES() as c;
     `.then(res => res[0]);
-
-    console.log(result)
 
     return !!result?.c;
   }
@@ -150,8 +147,8 @@ function useAuth() {
     useCode,
     sendCodeEmail,
     finalizeLogin,
-    logoutSession,
-    getSessionEmployee
+    logoutEmployee,
+    getSessionEmployee: getSessionUserId
   }
 }
 
