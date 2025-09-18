@@ -1,14 +1,60 @@
-import { Building2 } from "lucide-react";
-import { useState } from "react";
+import type { Company } from "@back/types";
+import { Building2, Save, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import { Button } from "./ui/button";
+
+const getCompany = async () => {
+	const res = await api.company["my-business"].$get();
+
+	if (!res.ok) {
+		return null;
+	}
+
+	const { company } = await res.json();
+	return company;
+};
 
 export default function ManageBusinessSettings() {
 	const [businessInfo, setBusinessInfo] = useState({
-		name: "Acme Corporation",
-		description:
-			"Leading provider of innovative solutions for modern businesses.",
+		name: "...",
+		description: "...",
 		icon: "",
-	});
+	} as Company);
+
+	const [saving, setSaving] = useState(false);
+
+	useEffect(() => {
+		getCompany().then((c) => {
+			if (c) {
+				setBusinessInfo(c);
+			}
+		});
+	}, []);
+
+	const updateCompanyInfo = async () => {
+		setSaving(true);
+		try {
+			const res = await api.company.update.$put({
+				json: {
+					name: businessInfo.name,
+					icon: businessInfo.icon,
+					description: businessInfo.description,
+				},
+			});
+
+			if (!res.ok) {
+				return;
+			}
+
+			const c = await getCompany();
+			if (c) {
+				setBusinessInfo(c);
+			}
+		} finally {
+			setSaving(false);
+		}
+	};
 
 	return (
 		<div className="space-y-6">
@@ -73,7 +119,11 @@ export default function ManageBusinessSettings() {
 					</div>
 				</div>
 
-				<Button className="mt-6 w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+				<Button
+					onClick={updateCompanyInfo}
+					disabled={saving}
+					className="mt-6 w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+				>
 					<Save className="w-4 h-4" />
 					Save Business Settings
 				</Button>

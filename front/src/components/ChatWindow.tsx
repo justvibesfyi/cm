@@ -1,4 +1,6 @@
+import type { Message } from "@back/types/index";
 import {
+	EyeClosed,
 	MoreHorizontal,
 	Paperclip,
 	Phone,
@@ -8,97 +10,30 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import type { Contact, Message } from "../types";
+import { api } from "@/lib/api";
+import { useChat } from "@/providers/chat";
 import MessageList from "./MessageList";
+import { Button } from "./ui/button";
 
 interface ChatWindowProps {
 	contact: Contact;
 }
 
+const fetchUserMessage = async (userId: string): Promise<Message[]> => {
+	// const res = api.chat.
+
+	return [];
+};
+
 const ChatWindow: React.FC<ChatWindowProps> = ({ contact }) => {
 	const [messageText, setMessageText] = useState("");
-	const [messages, setMessages] = useState<Message[]>([]);
-	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const { messages } = useChat();
 
-	// Mock messages for demonstration
-	useEffect(() => {
-		const mockMessages: Message[] = [
-			{
-				id: "1",
-				senderId: contact.id,
-				senderName: contact.name,
-				content: "Hey! How are you doing today?",
-				timestamp: new Date(Date.now() - 3600000),
-				type: "text",
-				isOwn: false,
-			},
-			{
-				id: "2",
-				senderId: "user-1",
-				senderName: "You",
-				content: "I'm doing great! Just finished a big project. How about you?",
-				timestamp: new Date(Date.now() - 3500000),
-				type: "text",
-				isOwn: true,
-			},
-			{
-				id: "3",
-				senderId: contact.id,
-				senderName: contact.name,
-				content: "That sounds awesome! I'd love to hear more about it.",
-				timestamp: new Date(Date.now() - 3400000),
-				type: "text",
-				isOwn: false,
-			},
-			{
-				id: "4",
-				senderId: "user-1",
-				senderName: "You",
-				content:
-					"Sure! It was a React application with real-time features. Took about 3 months to complete.",
-				timestamp: new Date(Date.now() - 3300000),
-				type: "text",
-				isOwn: true,
-			},
-			{
-				id: "5",
-				senderId: contact.id,
-				senderName: contact.name,
-				content:
-					"Impressive! React is such a powerful framework. I've been learning it myself.",
-				timestamp: new Date(Date.now() - 3200000),
-				type: "text",
-				isOwn: false,
-			},
-			// Add more messages for scrolling demonstration
-			...Array.from({ length: 20 }, (_, i) => ({
-				id: `msg-${i + 6}`,
-				senderId: i % 2 === 0 ? contact.id : "user-1",
-				senderName: i % 2 === 0 ? contact.name : "You",
-				content: `This is message ${i + 6}. ${i % 2 === 0 ? "From contact" : "From you"}.`,
-				timestamp: new Date(Date.now() - (3100000 - i * 60000)),
-				type: "text" as const,
-				isOwn: i % 2 !== 0,
-			})),
-		];
-		setMessages(mockMessages);
-	}, [contact.id, contact.name]);
+	console.log("Messages:", messages)
+	const messagesEndRef = useRef<HTMLDivElement>(null);
 
 	const handleSendMessage = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!messageText.trim()) return;
-
-		const newMessage: Message = {
-			id: Date.now().toString(),
-			senderId: "user-1",
-			senderName: "You",
-			content: messageText.trim(),
-			timestamp: new Date(),
-			type: "text",
-			isOwn: true,
-		};
-
-		setMessages((prev) => [...prev, newMessage]);
 		setMessageText("");
 	};
 
@@ -127,12 +62,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact }) => {
           <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
             <Video size={20} className="text-gray-600" />
           </button> */}
-					<button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-						<MoreHorizontal size={20} className="text-gray-600" />
-					</button>
-					<button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-						<MdClose size={20} className="text-gray-600" />
-					</button>
+					<Button className="p-2 rounded-full">
+						<MoreHorizontal size={20} className="" />
+					</Button>
+					<Button className="p-2 rounded-full transition-colors">
+						<EyeClosed size={20} className="text-gray-600" />
+					</Button>
 				</div>
 			</div>
 

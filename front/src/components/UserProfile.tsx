@@ -1,49 +1,77 @@
-import React from 'react';
-import { User } from '../types';
-import { Settings, LogOut } from 'lucide-react';
+import { Link } from "@tanstack/react-router";
+import { BriefcaseBusiness, Building, Building2, LogOut, Settings, Settings2 } from "lucide-react";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/providers/auth";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
-interface UserProfileProps {
-  user: User;
-}
+const UserProfile = () => {
+	const { user, logout } = useAuth();
 
-const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'away': return 'bg-yellow-500';
-      case 'offline': return 'bg-gray-400';
-      default: return 'bg-gray-400';
-    }
-  };
+	const getStatusColor = (status: string) => {
+		switch (status) {
+			case "online":
+				return "bg-green-500";
+			case "away":
+				return "bg-yellow-500";
+			case "offline":
+				return "bg-gray-400";
+			default:
+				return "bg-gray-400";
+		}
+	};
 
-  return (
-    <div className="p-4 border-t border-gray-200 bg-gray-50">
-      <div className="flex items-center">
-        <div className="relative flex-shrink-0 mr-3">
-          <img
-            src={user.avatar}
-            alt={user.name}
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full ${getStatusColor(user.status)}`}></div>
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-900 truncate">{user.name}</h4>
-          <p className="text-sm text-gray-500 truncate">{user.title}</p>
-        </div>
+	// todo skeleton
+	if (!user) {
+		return <div>...</div>;
+	}
 
-        <div className="flex items-center space-x-1 ml-2">
-          <button className="p-1.5 rounded-full hover:bg-gray-200 transition-colors">
-            <Settings size={16} className="text-gray-600" />
-          </button>
-          <button className="p-1.5 rounded-full hover:bg-gray-200 transition-colors">
-            <LogOut size={16} className="text-gray-600" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+	return (
+		<div className="p-4 border-t border-gray-200 bg-gray-50">
+			<div className="flex items-center">
+				<div className="relative flex-shrink-0 mr-3">
+					<Avatar>
+						<AvatarImage src={user.avatar} />
+						<AvatarFallback>CN</AvatarFallback>
+					</Avatar>
+				</div>
+
+				<div className="flex-1 min-w-0">
+					<h4 className="font-medium text-gray-900 truncate">
+						{user.first_name} {user.last_name}
+					</h4>
+					{/* <p className="text-sm text-gray-500 truncate">...</p> */}
+				</div>
+
+				<div className="flex items-center space-x-1 ml-2">
+					<DropdownMenu>
+						<DropdownMenuTrigger className="border p-2 rounded-md">
+							<Settings size={16} className="text-gray-600" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>
+								<Building2 size={16} className="mr-2" />
+								<Link to="/manage">Manage Company</Link>
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								className="font-bold text-red-700 cursor-pointer"
+								onClick={logout}
+							>
+								<LogOut size={16} className="mr-2" />
+								Log Out
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			</div>
+		</div>
+	);
 };
 
 export default UserProfile;

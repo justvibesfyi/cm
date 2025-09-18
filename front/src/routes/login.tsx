@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	Check,
@@ -8,19 +8,14 @@ import {
 	Send,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import z from "zod";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+import { useAuth } from "@/providers/auth";
 
-const searchSchema = z.object({
-	email: z.string().optional().catch(""),
-});
+const LoginComponent = () => {
+	const nav = useNavigate();
+	const { isAuthenticated, verifyLogin, startLogin } = useAuth();
 
-const LoginPage = () => {
-	const navigate = useNavigate();
-	const search = useSearch({ from: "/login" });
-	
-	const [email, setEmail] = useState(search.email || "");
+	const [email, setEmail] = useState("");
 	const [authCode, setAuthCode] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [message, setMessage] = useState("");
@@ -37,67 +32,51 @@ const LoginPage = () => {
 		}
 	}, [codeSent]);
 
-	// Auto-verify when 6 digits are entered
 	useEffect(() => {
-		if (authCode.length === 6 && codeSent) {
-			verifyCode();
+		if (isAuthenticated) {
+			nav({
+				to: "/app",
+			});
 		}
-	}, [authCode, codeSent]);
+	}, [isAuthenticated]);
+
+	useEffect(() => {
+		if (authCode.length === 6) {
+			setIsLoading(true);
+			setMessage("");
+
+			verifyLogin(email, authCode)
+				.then(async () => {
+					setMessage("Verification successful. Redirecting...");
+
+					await nav({
+						to: "/app",
+					});
+				})
+				.catch((e) => {
+					setMessage("Verification failed. Please try again.");
+					setAuthCode("");
+					console.log(e);
+				})
+				.finally(() => setIsLoading(false));
+		}
+	}, [authCode]);
 
 	const sendEmail = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsLoading(true);
 		setMessage("");
-		
-		try {
-			const res = await api.auth["start-login"].$post({
-				json: { email },
-			});
-
-			if (res.status === 200) {
-				setCodeSent(true);
-				setMessage("Check your email for the verification code!");
-				return;
-			}
-
-			if (res.status === 422) {
-				setMessage("Please wait 60 seconds before trying again");
-				return;
-			}
-
-			setMessage("Failed to send verification code. Please try again.");
-		} catch (error) {
-			setMessage("Failed to send verification code. Please try again.");
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	const verifyCode = async () => {
-		if (authCode.length !== 6) return;
-		
-		setIsLoading(true);
-		setMessage("");
 
 		try {
-			const res = await api.auth["verify-login"].$post({
-				json: { email, code: authCode },
-			});
+			await startLogin(email);
 
-			if (res.status === 200) {
-				setMessage("Login successful! Redirecting...");
-				// Small delay to show success message
-				setTimeout(() => {
-					navigate({ to: "/app" });
-				}, 1000);
-				return;
-			}
-
-			setMessage("Invalid verification code. Please try again.");
-			setAuthCode("");
-		} catch (error) {
-			setMessage("Verification failed. Please try again.");
-			setAuthCode("");
+			setCodeSent(true);
+			setMessage("Check your email for the verification code!");
+		} catch (e) {
+			console.log(e);
+			setMessage(
+				"Failed to send verification code. Please try again in 60 seconds.",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -117,7 +96,6 @@ const LoginPage = () => {
 	return (
 		<div className="min-h-screen bg-white flex items-center justify-center px-4">
 			<div className="max-w-md w-full">
-				{/* Logo and Header */}
 				<div className="text-center mb-8">
 					<div className="flex items-center justify-center mb-4">
 						<MessageSquare className="w-12 h-12 text-blue-500 mr-3" />
@@ -204,13 +182,15 @@ const LoginPage = () => {
 				{message && (
 					<div
 						className={`mt-4 p-4 border ${
-							message.includes("successful") || message.includes("Check your email")
+							message.includes("successful") ||
+							message.includes("Check your email")
 								? "bg-green-50 border-green-200 text-green-800"
 								: "bg-red-50 border-red-200 text-red-800"
 						}`}
 					>
 						<div className="flex items-center">
-							{(message.includes("successful") || message.includes("Check your email")) && (
+							{(message.includes("successful") ||
+								message.includes("Check your email")) && (
 								<Check className="w-5 h-5 mr-2" />
 							)}
 							<span>{message}</span>
@@ -244,6 +224,10 @@ const LoginPage = () => {
 };
 
 export const Route = createFileRoute("/login")({
-	component: LoginPage,
-	validateSearch: (search) => searchSchema.parse(search),
+	beforeLoad: ({ context }) => {
+		if (context.auth.isAuthenticated) {
+			throw redirect({ to: "/app" });
+		}
+	},
+	component: LoginComponent,
 });

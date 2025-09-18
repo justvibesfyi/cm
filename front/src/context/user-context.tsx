@@ -1,18 +1,11 @@
+import type { Employee } from "@back/types";
 import React from "react";
-
-export interface UserContract {
-	email?: string;
-	onboarded?: boolean;
-	firstName?: string;
-	lastName?: string;
-	avatar?: string;
-}
 
 /**
  * Application state interface
  */
 export interface AppState {
-	user?: UserContract;
+	user?: Employee;
 	updateState: (newState: Partial<AppState>) => void;
 }
 
@@ -20,7 +13,7 @@ export interface AppState {
  * Default application state
  */
 const defaultState: AppState = {
-	user: {},
+	user: undefined,
 	updateState: (newState?: Partial<AppState>) => {},
 };
 

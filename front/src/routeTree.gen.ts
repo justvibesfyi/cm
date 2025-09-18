@@ -9,30 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as OnboardRouteImport } from './routes/onboard'
-import { Route as ManageRouteImport } from './routes/manage'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppRouteImport } from './routes/app'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedOnboardCompanyRouteImport } from './routes/_authenticated/onboard-company'
+import { Route as AuthenticatedOnboardRouteImport } from './routes/_authenticated/onboard'
+import { Route as AuthenticatedManageRouteImport } from './routes/_authenticated/manage'
+import { Route as AuthenticatedLogoutRouteImport } from './routes/_authenticated/logout'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 
-const OnboardRoute = OnboardRouteImport.update({
-  id: '/onboard',
-  path: '/onboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ManageRoute = ManageRouteImport.update({
-  id: '/manage',
-  path: '/manage',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -40,61 +32,101 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedOnboardCompanyRoute =
+  AuthenticatedOnboardCompanyRouteImport.update({
+    id: '/onboard-company',
+    path: '/onboard-company',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedOnboardRoute = AuthenticatedOnboardRouteImport.update({
+  id: '/onboard',
+  path: '/onboard',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedManageRoute = AuthenticatedManageRouteImport.update({
+  id: '/manage',
+  path: '/manage',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedLogoutRoute = AuthenticatedLogoutRouteImport.update({
+  id: '/logout',
+  path: '/logout',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
   '/login': typeof LoginRoute
-  '/manage': typeof ManageRoute
-  '/onboard': typeof OnboardRoute
+  '/app': typeof AuthenticatedAppRoute
+  '/logout': typeof AuthenticatedLogoutRoute
+  '/manage': typeof AuthenticatedManageRoute
+  '/onboard': typeof AuthenticatedOnboardRoute
+  '/onboard-company': typeof AuthenticatedOnboardCompanyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
   '/login': typeof LoginRoute
-  '/manage': typeof ManageRoute
-  '/onboard': typeof OnboardRoute
+  '/app': typeof AuthenticatedAppRoute
+  '/logout': typeof AuthenticatedLogoutRoute
+  '/manage': typeof AuthenticatedManageRoute
+  '/onboard': typeof AuthenticatedOnboardRoute
+  '/onboard-company': typeof AuthenticatedOnboardCompanyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
-  '/manage': typeof ManageRoute
-  '/onboard': typeof OnboardRoute
+  '/_authenticated/app': typeof AuthenticatedAppRoute
+  '/_authenticated/logout': typeof AuthenticatedLogoutRoute
+  '/_authenticated/manage': typeof AuthenticatedManageRoute
+  '/_authenticated/onboard': typeof AuthenticatedOnboardRoute
+  '/_authenticated/onboard-company': typeof AuthenticatedOnboardCompanyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/login' | '/manage' | '/onboard'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/app'
+    | '/logout'
+    | '/manage'
+    | '/onboard'
+    | '/onboard-company'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/login' | '/manage' | '/onboard'
-  id: '__root__' | '/' | '/app' | '/login' | '/manage' | '/onboard'
+  to:
+    | '/'
+    | '/login'
+    | '/app'
+    | '/logout'
+    | '/manage'
+    | '/onboard'
+    | '/onboard-company'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/login'
+    | '/_authenticated/app'
+    | '/_authenticated/logout'
+    | '/_authenticated/manage'
+    | '/_authenticated/onboard'
+    | '/_authenticated/onboard-company'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
-  ManageRoute: typeof ManageRoute
-  OnboardRoute: typeof OnboardRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/onboard': {
-      id: '/onboard'
-      path: '/onboard'
-      fullPath: '/onboard'
-      preLoaderRoute: typeof OnboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/manage': {
-      id: '/manage'
-      path: '/manage'
-      fullPath: '/manage'
-      preLoaderRoute: typeof ManageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -102,11 +134,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -116,15 +148,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/onboard-company': {
+      id: '/_authenticated/onboard-company'
+      path: '/onboard-company'
+      fullPath: '/onboard-company'
+      preLoaderRoute: typeof AuthenticatedOnboardCompanyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/onboard': {
+      id: '/_authenticated/onboard'
+      path: '/onboard'
+      fullPath: '/onboard'
+      preLoaderRoute: typeof AuthenticatedOnboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/manage': {
+      id: '/_authenticated/manage'
+      path: '/manage'
+      fullPath: '/manage'
+      preLoaderRoute: typeof AuthenticatedManageRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/logout': {
+      id: '/_authenticated/logout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof AuthenticatedLogoutRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedAppRoute: typeof AuthenticatedAppRoute
+  AuthenticatedLogoutRoute: typeof AuthenticatedLogoutRoute
+  AuthenticatedManageRoute: typeof AuthenticatedManageRoute
+  AuthenticatedOnboardRoute: typeof AuthenticatedOnboardRoute
+  AuthenticatedOnboardCompanyRoute: typeof AuthenticatedOnboardCompanyRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAppRoute: AuthenticatedAppRoute,
+  AuthenticatedLogoutRoute: AuthenticatedLogoutRoute,
+  AuthenticatedManageRoute: AuthenticatedManageRoute,
+  AuthenticatedOnboardRoute: AuthenticatedOnboardRoute,
+  AuthenticatedOnboardCompanyRoute: AuthenticatedOnboardCompanyRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
-  ManageRoute: ManageRoute,
-  OnboardRoute: OnboardRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

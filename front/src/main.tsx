@@ -1,22 +1,43 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import "@fontsource/geist"
+import "@fontsource/inter"
 import "./index.css";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
-import { UserContextProvider } from "./context/user-provider.tsx";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { AuthProvider, useAuth } from "./providers/auth.tsx";
 import { routeTree } from "./routeTree.gen.ts";
 
 const queryClient = new QueryClient();
 
-const router = createRouter({ routeTree });
+export const router = createRouter({
+	routeTree,
+	context: {
+		// biome-ignore lint/style/noNonNullAssertion: auth will be passed down from App component
+		auth: undefined!,
+	},
+});
+
+declare module "@tanstack/react-router" {
+	interface Register {
+		router: typeof router;
+	}
+}
+
+const InnerApp = () => {
+	const auth = useAuth();
+
+	return <RouterProvider router={router} context={{ auth }} />;
+};
 
 // biome-ignore lint/style/noNonNullAssertion: Template
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>
 		<QueryClientProvider client={queryClient}>
-			<UserContextProvider>
-				<RouterProvider router={router} />
-			</UserContextProvider>
+			<AuthProvider>
+				<InnerApp />
+			</AuthProvider>
 		</QueryClientProvider>
 	</StrictMode>,
 );

@@ -19,7 +19,7 @@ export const UserContextProvider: React.FunctionComponent<Props> = (
 	};
 
 	const fetchUser = async () => {
-		const res = await api.auth.me.$get();
+		const res = await api.employee.me.$get();
 
 		if (!res.ok) {
 			updateState({ user: undefined });
@@ -31,8 +31,8 @@ export const UserContextProvider: React.FunctionComponent<Props> = (
 		updateState({
 			user: {
 				email: user.email,
-				firstName: user.firstName,
-				lastName: user.lastName,
+				first_name: user.first_name,
+				last_name: user.last_name,
 				onboarded: user.onboarded,
 				avatar: user.avatar,
 			},

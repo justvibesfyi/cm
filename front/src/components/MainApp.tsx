@@ -8,13 +8,14 @@ import {
 	X,
 } from "lucide-react";
 import { useState } from "react";
+import ChatWindow from "@/components/ChatWindow";
+import ContactsList from "@/components/ContactsList";
+import UserProfile from "@/components/UserProfile";
 import { Button } from "@/components/ui/button";
-import ChatWindow from "../components/ChatWindow";
-import ContactsList from "../components/ContactsList";
-import UserProfile from "../components/UserProfile";
+import { useChat } from "@/providers/chat";
 
-export const Route = createFileRoute("/app")({
-	component: AppComponent,
+export const Route = createFileRoute("/_authenticated/app")({
+	component: MainApp,
 });
 
 type User = {
@@ -36,10 +37,11 @@ type Contact = {
 	isOnline: boolean;
 };
 
-function AppComponent() {
-	const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+export default function MainApp() {
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-	const [searchQuery, setSearchQuery] = useState("");
+	// const [searchQuery, setSearchQuery] = useState("");
+
+	const { selectedConvo } = useChat();
 
 	// Mock data
 	const currentUser: User = {
@@ -49,71 +51,6 @@ function AppComponent() {
 			"https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
 		title: "Product Manager",
 		status: "online",
-	};
-
-	const contacts: Contact[] = [
-		{
-			id: "1",
-			name: "Sarah Wilson",
-			avatar:
-				"https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
-			platform: "telegram",
-			lastMessage: "Hey! How are you doing today?",
-			lastMessageTime: "2:30 PM",
-			unreadCount: 2,
-			isOnline: true,
-		},
-		{
-			id: "2",
-			name: "Mike Johnson",
-			avatar:
-				"https://images.pexels.com/photos/1212984/pexels-photo-1212984.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
-			platform: "whatsapp",
-			lastMessage: "Can we schedule a meeting for tomorrow?",
-			lastMessageTime: "1:45 PM",
-			unreadCount: 0,
-			isOnline: false,
-		},
-		{
-			id: "3",
-			name: "Emily Chen",
-			avatar:
-				"https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
-			platform: "telegram",
-			lastMessage: "Thanks for the help with the project!",
-			lastMessageTime: "12:20 PM",
-			unreadCount: 1,
-			isOnline: true,
-		},
-		{
-			id: "4",
-			name: "David Brown",
-			avatar:
-				"https://images.pexels.com/photos/1484794/pexels-photo-1484794.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
-			platform: "whatsapp",
-			lastMessage: "See you at the conference next week",
-			lastMessageTime: "11:30 AM",
-			unreadCount: 0,
-			isOnline: false,
-		},
-		{
-			id: "5",
-			name: "Lisa Anderson",
-			avatar:
-				"https://images.pexels.com/photos/1542085/pexels-photo-1542085.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
-			platform: "telegram",
-			lastMessage: "Great work on the presentation!",
-			lastMessageTime: "Yesterday",
-			unreadCount: 0,
-			isOnline: true,
-		},
-	];
-
-	const filteredContacts = contacts;
-
-	const handleContactSelect = (contact: Contact) => {
-		setSelectedContact(contact);
-		setIsSidebarOpen(false);
 	};
 
 	return (
@@ -149,11 +86,7 @@ function AppComponent() {
 
 				{/* Contacts List */}
 				<div className="flex-1 overflow-hidden">
-					<ContactsList
-						contacts={filteredContacts}
-						selectedContact={selectedContact}
-						onContactSelect={handleContactSelect}
-					/>
+					<ContactsList />
 				</div>
 
 				{/* User Profile */}
@@ -170,24 +103,24 @@ function AppComponent() {
 					>
 						<Menu size={20} />
 					</Button>
-					{selectedContact && (
+					{selectedConvo && (
 						<div className="flex items-center flex-1">
 							<img
-								src={selectedContact.avatar}
-								alt={selectedContact.name}
+								src={selectedConvo.avatar}
+								alt={selectedConvo.name}
 								className="w-8 h-8 rounded-full mr-3"
 							/>
 							<div>
 								<h2 className="font-medium text-gray-900">
-									{selectedContact.name}
+									{selectedConvo.name}
 								</h2>
 								<p className="text-xs text-gray-500">
-									{selectedContact.isOnline ? "Online" : "Last seen recently"}
+									{selectedConvo.isOnline ? "Online" : "Last seen recently"}
 								</p>
 							</div>
 						</div>
 					)}
-					{selectedContact && (
+					{selectedConvo && (
 						<div className="flex items-center space-x-2">
 							<Button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
 								<Phone size={18} />
@@ -203,8 +136,8 @@ function AppComponent() {
 				</div>
 
 				{/* Chat Window */}
-				{selectedContact ? (
-					<ChatWindow contact={selectedContact} />
+				{selectedConvo ? (
+					<ChatWindow contact={selectedConvo} />
 				) : (
 					<div className="flex-1 flex items-center justify-center bg-gray-50">
 						<div className="text-center">

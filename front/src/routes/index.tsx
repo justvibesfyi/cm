@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
 	BarChart2,
 	Check,
@@ -18,12 +19,14 @@ import {
 	Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
 	component: ChatMeshLanding,
 });
 
 function ChatMeshLanding() {
+	const nav = useNavigate();
 	const [email, setEmail] = useState("");
 
 	// Platform data for the icons grid
@@ -161,12 +164,12 @@ function ChatMeshLanding() {
 							onChange={(e) => setEmail(e.target.value)}
 							className="px-4 py-3 rounded-lg text-gray-200 border-gray-400 border-1 w-full md:w-auto flex-grow"
 						/>
-						<button
+						<Button
 							className="bg-blue-500 hover:bg-blue-600 text-white font-medium px-8 py-3 rounded-lg transition duration-300 w-full md:w-auto cursor-pointer"
-							onClick={async () => await login(email)}
+							onClick={() => nav({ to: "/login" })}
 						>
-							Start Free Trial
-						</button>
+							Start Now
+						</Button>
 					</div>
 					<p className="text-green-400"> ✓ No credit card required</p>
 				</div>
@@ -221,9 +224,9 @@ function ChatMeshLanding() {
 						))}
 					</div>
 
-					<button className="bg-blue-500 hover:bg-blue-600 text-white font-medium px-8 py-3 rounded-lg transition duration-300">
+					<Button className="bg-blue-500 hover:bg-blue-600 text-white font-medium px-8 py-3 rounded-lg transition duration-300">
 						See All Integrations
-					</button>
+					</Button>
 				</div>
 			</section>
 
@@ -255,7 +258,7 @@ function ChatMeshLanding() {
 									))}
 								</ul>
 
-								<button
+								<Button
 									className={`w-full py-3 rounded-lg font-medium transition duration-300 ${
 										plan.highlighted
 											? "bg-blue-500 hover:bg-blue-600 text-white"
@@ -263,7 +266,7 @@ function ChatMeshLanding() {
 									}`}
 								>
 									{plan.ctaText}
-								</button>
+								</Button>
 							</div>
 						))}
 					</div>
@@ -283,9 +286,9 @@ function ChatMeshLanding() {
 							placeholder="Enter your email"
 							className="px-4 py-3 rounded-lg text-gray-900 w-full md:w-auto flex-grow"
 						/>
-						<button className="bg-blue-500 hover:bg-blue-600 text-white font-medium px-8 py-3 rounded-lg transition duration-300 w-full md:w-auto">
+						<Button className="bg-blue-500 hover:bg-blue-600 text-white font-medium px-8 py-3 rounded-lg transition duration-300 w-full md:w-auto">
 							Start Free Trial
-						</button>
+						</Button>
 					</div>
 					<p className="text-gray-400">
 						✓ No credit card required • 14-day trial
