@@ -1,12 +1,19 @@
 import { sql } from "bun";
+import type { Employee } from "../types";
 
 const useEmployee = () => {
     return {
-        getEmployee: async (id: string) => {
-            const user = await sql`
-                SELECT first_name, last_name, email, onboarded FROM employee WHERE id = ${id}
+        getBasicEmployee: async (id: string) => {
+            const employee = await sql`
+                SELECT * FROM employee WHERE id = ${id}
             `.then(res => res[0]);
-            return user;
+            return employee as Employee | undefined;
+        },
+        getFullEmployee: async (id: string) => {
+            const employee = await sql`
+                SELECT * FROM employee WHERE id = ${id}
+            `.then(res => res[0]);
+            return employee as Employee;
         },
         getCompanyEmployees: async (company_id: number) => {
             const employees = await sql`
@@ -15,10 +22,17 @@ const useEmployee = () => {
             return employees;
         },
         updateEmployee: async (id: string, firstName: string, lastName: string) => {
-            await sql`
-                UPDATE employee SET first_name = ${firstName}, last_name = ${lastName}
+            const employee = await sql`
+                UPDATE employee
+                SET
+                    first_name = ${firstName},
+                    last_name = ${lastName},
+                    onboarded = true
                 WHERE id = ${id}
-            `;
+                RETURNING *
+            `.then(res => res[0]);
+
+            return employee as Employee;
         },
         setEmployeeCompany: async (id: string, company_id: number) => {
             const res = await sql`

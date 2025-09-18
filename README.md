@@ -1,0 +1,14 @@
+- Client Error page
+- Employee Roles
+- Invites
+- Image Uploads
+- Integrations
+    - Tg
+    - Zalo
+    - Discord
+- 2 types of contacts: Customers and Employees
+    - Have 2 separators that say "staff" and "customer" with > (closed) and v (open)
+
+- multiple conversations per user (closed tickets)
+- initiate conversation
+    - Might be limited based on the platform

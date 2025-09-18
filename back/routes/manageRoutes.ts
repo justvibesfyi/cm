@@ -160,24 +160,4 @@ export const manageRoutes = new Hono()
         ];
 
         return c.json({ integrations });
-    })
-
-    // GET /api/manage/business
-    .get('/business', async (c) => {
-        try {
-            // TODO: Fetch business information from database
-            const business = {
-                name: 'ChatMesh Business',
-                description: 'Multi-platform messaging solution',
-                icon: null,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-
-            return c.json({ business });
-
-        } catch (error) {
-            console.error(`Error fetching business: ${error}`);
-            return c.json({ error: 'Failed to fetch business information' }, 500);
-        }
     });

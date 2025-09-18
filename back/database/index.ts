@@ -1,5 +1,6 @@
 import { initializeDatabase } from "./db";
 import { runMigrations } from "./migrator";
+import { seed } from "./seed.js";
 
 // Database module exports
 export { initializeDatabase } from "./db";
@@ -16,6 +17,8 @@ export async function initializeApp(): Promise<void> {
   console.log(process.env.DATABASE_URL)
 	initializeDatabase();
 
+	
 	// Run migrations
 	await runMigrations();
+	await seed();
 }

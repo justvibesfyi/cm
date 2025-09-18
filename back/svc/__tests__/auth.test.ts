@@ -138,54 +138,54 @@ describe("useAuth", () => {
 		});
 	});
 
-	describe("checkCodeExists", () => {
-		test("should return false when no code exists for email", async () => {
+	describe("can generate code", () => {
+		test("should return true when no code exists for email", async () => {
 			const email = "nonexistent@example.com";
 
-			const exists = await auth.checkCodeExists(email);
+			const exists = await auth.canRegenerateCode(email);
 
-			expect(exists).toBe(false);
+			expect(exists).toBe(true);
 		});
 
-		test("should return true when recent code exists for email", async () => {
+		test("should return false when recent code exists for email", async () => {
 			const email = "test@example.com";
 			const code = "123456";
 
 			await auth.setCode(email, code);
 
-			const exists = await auth.checkCodeExists(email);
+			const able = await auth.canRegenerateCode(email);
 
-			expect(exists).toBe(true);
+			expect(able).toBe(false);
 		});
 
-		test("should return false when code is older than 1 minute", async () => {
+		test("should return true when code is older than 5 minutes", async () => {
 			const email = "test@example.com";
 			const code = "123456";
 
 			// Insert code with old timestamp (2 minutes ago)
 			await sql`
         INSERT INTO auth_code (email, code, created_at) 
-        VALUES (${email}, ${code}, datetime('now', '-2 minutes'))
+        VALUES (${email}, ${code}, datetime('now', '-6 minutes'))
       `;
 
-			const exists = await auth.checkCodeExists(email);
+			const able = await auth.canRegenerateCode(email);
 
-			expect(exists).toBe(false);
+			expect(able).toBe(true);
 		});
 
-		test("should return true when code is exactly within 1 minute", async () => {
+		test("should return true when code is within 5 minutes", async () => {
 			const email = "test@example.com";
 			const code = "123456";
 
 			// Insert code with timestamp 30 seconds ago
 			await sql`
         INSERT INTO auth_code (email, code, created_at) 
-        VALUES (${email}, ${code}, datetime('now', '-30 seconds'))
+        VALUES (${email}, ${code}, datetime('now', '-3 minutes'))
       `;
 
-			const exists = await auth.checkCodeExists(email);
+			const able = await auth.canRegenerateCode(email);
 
-			expect(exists).toBe(true);
+			expect(able).toBe(true);
 		});
 
 		test("should only check codes for specific email", async () => {
@@ -196,11 +196,11 @@ describe("useAuth", () => {
 			// Set code for email1 only
 			await auth.setCode(email1, code);
 
-			const exists1 = await auth.checkCodeExists(email1);
-			const exists2 = await auth.checkCodeExists(email2);
+			const able1 = await auth.canRegenerateCode(email1);
+			const able2 = await auth.canRegenerateCode(email2);
 
-			expect(exists1).toBe(true);
-			expect(exists2).toBe(false);
+			expect(able1).toBe(false);
+			expect(able2).toBe(true);
 		});
 
 		test("use code invalidates it", async () => {

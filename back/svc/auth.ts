@@ -6,12 +6,12 @@ import useEmployee from "./employee";
 
 function useAuth() {
 
-  const checkCodeExists = async (email: string) => {
+  const canRegenerateCode = async (email: string) => {
     const res = await sql`
       SELECT COUNT(*) as cnt FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-1 minute');
     `.then((res) => res[0]);
 
-    return res.cnt > 0;
+    return res.cnt === 0;
   }
 
   const generateCode = () => {
@@ -33,7 +33,7 @@ function useAuth() {
 
   const getCode = async (email: string) => {
     const res = await sql`
-      SELECT code FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-1 minute')
+      SELECT code FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-5 minute')
     `.then(res => res[0]);
 
     return res?.code || '';
@@ -44,7 +44,7 @@ function useAuth() {
     const res = await sql.begin(async (sql) => {
 
       const res = await sql`
-        SELECT count(*) as count FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-1 minute');
+        SELECT count(*) as count FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-5 minute');
       `.then((res) => res[0]);
 
       console.log(res)
@@ -64,8 +64,8 @@ function useAuth() {
   }
 
   const sendCodeEmail = async (email: string): Promise<boolean> => {
-    const exists = await checkCodeExists(email);
-    if (exists) {
+    const canRegen = await canRegenerateCode(email);
+    if (!canRegen) {
       return false;
     }
 
@@ -75,7 +75,7 @@ function useAuth() {
     const mailer = useEmail();
     await mailer.sendMail(email, code);
 
-    console.log("sent email")
+    console.log("sent email:", code)
 
     return true;
   }
@@ -140,7 +140,7 @@ function useAuth() {
   }
 
   return {
-    checkCodeExists,
+    canRegenerateCode,
     generateCode,
     setCode,
     getCode,

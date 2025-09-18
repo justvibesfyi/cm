@@ -1,8 +1,11 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
-import { authRoutes } from "./routes/auth";
-import { manageRoutes } from "./routes/manage";
-import { initializeApp } from "./src/database";
+import { initializeApp } from "./database";
+import { authRoutes } from "./routes/authRoutes";
+import { chatRoutes } from "./routes/chatRoutes";
+import { companyRoutes } from "./routes/companyRoutes";
+import { employeeRoutes } from "./routes/employeeRoutes";
+import { manageRoutes } from "./routes/manageRoutes";
 
 // Initialize database
 try {
@@ -18,7 +21,10 @@ const app = new Hono();
 const apiRoutes = app
 	.basePath("/api")
 	.route("/manage", manageRoutes)
-	.route("/auth", authRoutes);
+	.route("/auth", authRoutes)
+	.route("/employee", employeeRoutes)
+	.route("/company", companyRoutes)
+	.route("/chat", chatRoutes);
 
 app
 	.get("*", serveStatic({ root: "./front/dist" }))

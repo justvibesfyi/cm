@@ -4,7 +4,6 @@ import { Hono } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
 import z from "zod";
 import useAuth from "../svc/auth";
-import useEmployee from "../svc/employee";
 import requiresAuth from "./middleware/requiresAuth";
 
 const loginSchema = z.object({
@@ -49,14 +48,9 @@ export const authRoutes = new Hono()
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
         });
 
-        return c.redirect("/app");
-    })
-    .get("/me", requiresAuth, async (c) => {
+        const user = await auth.getSessionEmployee(sessId);
 
-        const emp = useEmployee();
-        const employeeData = await emp.getEmployee(c.var.user.id);
-
-        return c.json(employeeData);
+        return c.json(user)
     })
     .get("/logout", requiresAuth, async (c) => {
         const auth = useAuth();
