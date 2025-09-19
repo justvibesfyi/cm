@@ -164,7 +164,7 @@ function Manage() {
 									<div
 										key={platform.id}
 										variant={"outline"}
-										className={`relative p-4 h-auto flex-col gap-2 w-full flex items-center ${
+										className={`relative p-4 h-auto flex-col gap-2 w-full flex items-center cursor-pointer ${
 											selectedPlatform === platform.id
 												? "border border-primary"
 												: "border"
@@ -284,89 +284,81 @@ function Manage() {
 							)}
 						</CardContent>
 					</Card>
-
-					{/* Business Settings */}
-					<ManageBusinessSettings />
+	<ManageBusinessSettings />;
+	</div>
+	<div className="mt-8">
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					<Users className="w-6 h-6" />
+					Team Management
+				</CardTitle>
+				<CardDescription>Invite and manage your team members</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-6">
+				{/* Add New Member */}
+				<div className="p-4 border rounded-lg border-border">
+					<h3 className="font-semibold mb-3">Invite New Team Member</h3>
+					<div className="flex gap-3">
+						<div className="flex-1">
+							<Input
+								type="email"
+								value={newMemberEmail}
+								onChange={(e) => setNewMemberEmail(e.target.value)}
+								placeholder="Enter email address..."
+							/>
+						</div>
+						<Button onClick={addTeamMember}>
+							<UserPlus className="w-4 h-4 mr-2" />
+							Invite
+						</Button>
+					</div>
 				</div>
 
-				{/* Team Management */}
-				<div className="mt-8">
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2">
-								<Users className="w-6 h-6" />
-								Team Management
-							</CardTitle>
-							<CardDescription>
-								Invite and manage your team members
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-6">
-							{/* Add New Member */}
-							<div className="p-4 border rounded-lg border-border">
-								<h3 className="font-semibold mb-3">Invite New Team Member</h3>
-								<div className="flex gap-3">
-									<div className="flex-1">
-										<Input
-											type="email"
-											value={newMemberEmail}
-											onChange={(e) => setNewMemberEmail(e.target.value)}
-											placeholder="Enter email address..."
-										/>
+				{/* Team Members List */}
+				<div className="space-y-3">
+					{teamMembers.map((member) => (
+						<div
+							key={member.id}
+							className="flex items-center justify-between p-4 border rounded-lg border-border"
+						>
+							<div className="flex items-center gap-3">
+								<div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+									<Mail className="w-5 h-5 text-muted-foreground" />
+								</div>
+								<div>
+									<p className="font-medium">{member.email}</p>
+									<div className="flex items-center gap-2 mt-1">
+										<span className="text-sm text-muted-foreground">
+											{member.role}
+										</span>
+										<Separator orientation="vertical" className="h-4" />
+										<Badge
+											variant={
+												member.status === "active" ? "default" : "secondary"
+											}
+										>
+											{member.status === "active" ? "Active" : "Pending"}
+										</Badge>
 									</div>
-									<Button onClick={addTeamMember}>
-										<UserPlus className="w-4 h-4 mr-2" />
-										Invite
-									</Button>
 								</div>
 							</div>
 
-							{/* Team Members List */}
-							<div className="space-y-3">
-								{teamMembers.map((member) => (
-									<div
-										key={member.id}
-										className="flex items-center justify-between p-4 border rounded-lg border-border"
-									>
-										<div className="flex items-center gap-3">
-											<div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-												<Mail className="w-5 h-5 text-muted-foreground" />
-											</div>
-											<div>
-												<p className="font-medium">{member.email}</p>
-												<div className="flex items-center gap-2 mt-1">
-													<span className="text-sm text-muted-foreground">
-														{member.role}
-													</span>
-													<Separator orientation="vertical" className="h-4" />
-													<Badge
-														variant={
-															member.status === "active"
-																? "default"
-																: "secondary"
-														}
-													>
-														{member.status === "active" ? "Active" : "Pending"}
-													</Badge>
-												</div>
-											</div>
-										</div>
-
-										<Button
-											variant="ghost"
-											size="icon"
-											className="text-destructive"
-											onClick={() => removeTeamMember(member.id)}
-										>
-											<Trash2 className="w-4 h-4" />
-										</Button>
-									</div>
-								))}
-							</div>
-						</CardContent>
-					</Card>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="text-destructive"
+								onClick={() => removeTeamMember(member.id)}
+							>
+								<Trash2 className="w-4 h-4" />
+							</Button>
+						</div>
+					))}
 				</div>
-			</div>
+			</CardContent>
+		</Card>
+	</div>;
+	</div>
 		</div>
-	);
+	)
 }

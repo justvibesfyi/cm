@@ -6,8 +6,9 @@ import {
 	expect,
 	test,
 } from "bun:test";
-import { sql } from "bun";
-import { initializeDb } from "../../database";
+import { eq, sql } from "drizzle-orm";
+import { db } from "../../db/db";
+import { authCode, employee, session } from "../../db/schema";
 import useAuth from "../auth.js";
 
 describe("useAuth", () => {
@@ -16,8 +17,6 @@ describe("useAuth", () => {
 
 	beforeAll(async () => {
 		process.env.DATABASE_URL = "sqlite::memory:";
-
-		await initializeDb();
 
 		auth = useAuth();
 	});
@@ -33,9 +32,9 @@ describe("useAuth", () => {
 
 	beforeEach(async () => {
 		// Clean up tables before each test
-		await sql`DELETE FROM auth_code`;
-		await sql`DELETE FROM session`;
-		await sql`DELETE FROM employee`;
+		await db.delete(authCode);
+		await db.delete(session);
+		await db.delete(employee);
 	});
 
 	describe("generateCode", () => {
@@ -75,43 +74,43 @@ describe("useAuth", () => {
 			const tableName = `temp_test`;
 
 			// Create table
-			await sql`CREATE TABLE temp_test (
+			await db.run(sql`CREATE TABLE temp_test (
 				id INTEGER PRIMARY KEY,
 				name TEXT,
 				value INTEGER
-			)`;
+			)`);
 
 			// Insert row
 			const testName = "test_item";
 			const testValue = 42;
-			await sql`INSERT INTO temp_test (name, value) VALUES (${testName}, ${testValue})`;
+			await db.run(sql`INSERT INTO temp_test (name, value) VALUES (${testName}, ${testValue})`);
 
 			// Retrieve row
-			const result =
-				await sql`SELECT * FROM temp_test WHERE name = ${testName}`;
+			const result = await db.all(sql`SELECT * FROM temp_test WHERE name = ${testName}`);
 
 			expect(result).toHaveLength(1);
 			expect(result[0].name).toBe(testName);
 			expect(result[0].value).toBe(testValue);
 
 			// Clean up
-			await sql`DROP TABLE ${sql(tableName)}`;
+			await db.run(sql`DROP TABLE ${sql.identifier(tableName)}`);
 		});
 
 		test("should replace existing code for same email", async () => {
-			const email = "test@example.com";
+			const testEmail = "test@example.com";
 			const oldCode = "111111";
 			const newCode = "222222";
 
 			// Insert first code
-			await auth.setCode(email, oldCode);
+			await auth.setCode(testEmail, oldCode);
 
 			// Insert second code (should replace first)
-			await auth.setCode(email, newCode);
+			await auth.setCode(testEmail, newCode);
 
-			const result = await sql`
-        SELECT email, code FROM auth_code WHERE email = ${email}
-      `;
+			const result = await db
+				.select({ email: authCode.email, code: authCode.code })
+				.from(authCode)
+				.where(eq(authCode.email, testEmail));
 
 			expect(result).toHaveLength(1);
 			expect(result[0].code).toBe(newCode);
@@ -126,9 +125,10 @@ describe("useAuth", () => {
 			await auth.setCode(email1, code1);
 			await auth.setCode(email2, code2);
 
-			const result = await sql`
-        SELECT email, code FROM auth_code ORDER BY email
-      `;
+			const result = await db
+				.select({ email: authCode.email, code: authCode.code })
+				.from(authCode)
+				.orderBy(authCode.email);
 
 			expect(result).toHaveLength(2);
 			expect(result[0].email).toBe(email1);
@@ -159,31 +159,37 @@ describe("useAuth", () => {
 		});
 
 		test("should return true when code is older than 5 minutes", async () => {
-			const email = "test@example.com";
+			const testEmail = "test@example.com";
 			const code = "123456";
 
-			// Insert code with old timestamp (2 minutes ago)
-			await sql`
-        INSERT INTO auth_code (email, code, created_at) 
-        VALUES (${email}, ${code}, datetime('now', '-6 minutes'))
-      `;
+			// Insert code with old timestamp (6 minutes ago)
+			await db
+				.insert(authCode)
+				.values({
+					email: testEmail,
+					code,
+					created_at: sql`datetime('now', '-6 minutes')`
+				});
 
-			const able = await auth.canRegenerateCode(email);
+			const able = await auth.canRegenerateCode(testEmail);
 
 			expect(able).toBe(true);
 		});
 
 		test("should return true when code is within 5 minutes", async () => {
-			const email = "test@example.com";
+			const testEmail = "test@example.com";
 			const code = "123456";
 
-			// Insert code with timestamp 30 seconds ago
-			await sql`
-        INSERT INTO auth_code (email, code, created_at) 
-        VALUES (${email}, ${code}, datetime('now', '-3 minutes'))
-      `;
+			// Insert code with timestamp 3 minutes ago
+			await db
+				.insert(authCode)
+				.values({
+					email: testEmail,
+					code,
+					created_at: sql`datetime('now', '-3 minutes')`
+				});
 
-			const able = await auth.canRegenerateCode(email);
+			const able = await auth.canRegenerateCode(testEmail);
 
 			expect(able).toBe(true);
 		});

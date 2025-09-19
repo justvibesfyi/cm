@@ -1,17 +1,23 @@
 // Authentication service implementation placeholder
 
-import { sql } from "bun";
+import { and, eq, gt, sql } from "drizzle-orm";
+import { db } from "../db/db";
+import { authCode, employee, session } from "../db/schema";
 import { useEmail } from "./email";
 import useEmployee from "./employee";
 
 function useAuth() {
 
   const canRegenerateCode = async (email: string) => {
-    const res = await sql`
-      SELECT COUNT(*) as cnt FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-1 minute');
-    `.then((res) => res[0]);
+    const [result] = await db
+      .select({ cnt: sql<number>`COUNT(*)` })
+      .from(authCode)
+      .where(and(
+        eq(authCode.email, email),
+        gt(authCode.created_at, sql`datetime('now', '-1 minute')`)
+      ));
 
-    return res.cnt === 0;
+    return result.cnt === 0;
   }
 
   const generateCode = () => {
@@ -23,44 +29,51 @@ function useAuth() {
   }
 
   const setCode = async (email: string, code: string) => {
-    await sql`
-      DELETE FROM auth_code WHERE email = ${email}
-    `;
-    await sql`
-      INSERT INTO auth_code (email, code) VALUES (${email}, ${code});
-    `;
+    await db
+      .delete(authCode)
+      .where(eq(authCode.email, email));
+
+    await db
+      .insert(authCode)
+      .values({ email, code });
   }
 
   const getCode = async (email: string) => {
-    const res = await sql`
-      SELECT code FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-5 minute')
-    `.then(res => res[0]);
+    const [result] = await db
+      .select({ code: authCode.code })
+      .from(authCode)
+      .where(and(
+        eq(authCode.email, email),
+        gt(authCode.created_at, sql`datetime('now', '-5 minute')`)
+      ));
 
-    return res?.code || '';
+    return result?.code || '';
   }
 
   const useCode = async (email: string) => {
+    const result = await db.transaction(async (tx) => {
+      const [codeResult] = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(authCode)
+        .where(and(
+          eq(authCode.email, email),
+          gt(authCode.created_at, sql`datetime('now', '-5 minute')`)
+        ));
 
-    const res = await sql.begin(async (sql) => {
+      console.log(codeResult);
 
-      const res = await sql`
-        SELECT count(*) as count FROM auth_code WHERE email = ${email} AND created_at > datetime('now', '-5 minute');
-      `.then((res) => res[0]);
-
-      console.log(res)
-
-      if (!res) {
+      if (!codeResult) {
         return false;
       }
 
-      await sql`
-        DELETE FROM auth_code WHERE email = ${email};
-      `;
+      await tx
+        .delete(authCode)
+        .where(eq(authCode.email, email));
 
-      return res?.count || 0;
+      return codeResult?.count || 0;
     });
 
-    return !!res;
+    return !!result;
   }
 
   const sendCodeEmail = async (email: string): Promise<boolean> => {
@@ -88,55 +101,62 @@ function useAuth() {
     }
 
     // check if user is already registered
-
-    const user = await sql`
-      SELECT * FROM employee WHERE email = $email;
-    `.then((res) => res[0]);
+    const [user] = await db
+      .select()
+      .from(employee)
+      .where(eq(employee.ema, email));
 
     // if no, then add a user
     if (!user) {
-      const employee = useEmployee();
-      await employee.createEmployee(email);
+      const employeeService = useEmployee();
+      await employeeService.createEmployee(email);
     }
 
     // then create a session
-    await sql`
-      DELETE FROM session WHERE employee_id = (SELECT id FROM employee WHERE email = ${email});
-    `;
+    await db
+      .delete(session)
+      .where(eq(session.employee_id, sql`(SELECT id FROM employee WHERE email = ${email})`));
 
     const sessionId = crypto.randomUUID();
-    await sql`
-      INSERT INTO session (id, employee_id, expires_at) VALUES (${sessionId}, (SELECT id FROM employee WHERE email = ${email}), datetime('now', '+30 days'));
-    `;
+    await db
+    INSEert(session)
+      .values({
+        id: sessionId,
+        eid: sql`(SELECT id FROM employee WHERE email = ${email})`,
+        exp: sql`datetime('now', '+30 days')`
+      });
+
     return sessionId;
   }
 
   const getSessionUserId = async (sessionId: string) => {
-    const basic = await sql`
-      SELECT employee.id, employee.email
-      FROM employee
-        LEFT JOIN session ON employee.id = session.employee_id
-      WHERE session.id = ${sessionId} AND session.expires_at > datetime('now')
-      ;
-    `.then(res => res[0]);
+    const [result] = await db
+      .select({
+        id: employee.id,
+        email: employee.email
+      })
+      .from(employee)
+      .leftJoin(session, eq(employee.id, session.employee_id))
+      .where(and(
+        eq(session.id, sessionId),
+        gt(session.expires_at, sql`datetime('now')`)
+      ));
 
-    if (!basic)
+    if (!result)
       return undefined;
 
-    return basic as {
+    return result as {
       id: string,
       email: string,
     };
   }
 
   const logoutEmployee = async (sessionId: string) => {
-    const result = await sql`
-      DELETE FROM session
-      WHERE id = ${sessionId}
-      RETURNING CHANGES() as c;
-    `.then(res => res[0]);
+    const result = await db
+      .delete(session)
+      .where(eq(session.id, sessionId));
 
-    return !!result?.c;
+    return result
   }
 
   return {

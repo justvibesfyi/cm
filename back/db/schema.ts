@@ -1,0 +1,155 @@
+import { relations, sql } from 'drizzle-orm'
+import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+
+export const authCode = sqliteTable("auth_code", {
+    id: integer().primaryKey({ autoIncrement: true }),
+    email: text().notNull(),
+    code: text().notNull(),
+    created_at: text().default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Indexes
+export const idxAuthCodeEmail = index("idx_auth_code_email").on(authCode.email);
+export const idxAuthCodecreated_at = index("idx_auth_code_created_at").on(
+    authCode.created_at,
+);
+
+export const company = sqliteTable('company', {
+    id: integer().primaryKey(),
+    name: text().notNull(),
+    description: text(),
+    icon: text(),
+    created_at: text().default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const customer = sqliteTable(
+    "customer",
+    {
+        id: integer().primaryKey(),
+        platform_customer_id: text().notNull(),
+        company_id: integer()
+            .notNull()
+            .references(() => company.id),
+        platform: text().notNull(),
+        name: text(),
+        avatar: text(),
+        platform_channel_id: text(),
+    },
+    (t) => [
+        uniqueIndex("idx_customers_platform_customer_company").on(
+            t.platform,
+            t.platform_customer_id,
+            t.company_id,
+        ),
+    ],
+);
+
+export const customerRelations = relations(customer, ({ one, many }) => ({
+    company: one(company, {
+        fields: [customer.company_id],
+        references: [company.id],
+    }),
+    messages: many(message),
+}));
+
+export const employee = sqliteTable("employee", {
+    id: text().primaryKey(),
+    email: text().notNull().unique(),
+    first_name: text(),
+    last_name: text(),
+    avatar: text(),
+    company_id: integer().references(() => company.id, {
+        onDelete: "set null",
+    }),
+    position: text(),
+    onboarded: integer({ mode: "boolean" }).default(false),
+    created_at: text().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const employeeRelations = relations(employee, ({ one, many }) => ({
+    company: one(company, {
+        fields: [employee.company_id],
+        references: [company.id],
+    }),
+    sessions: many(session),
+    messages: many(message),
+}));
+
+// Indexes
+export const idxEmployeeEmail = uniqueIndex("idx_employee_email").on(
+    employee.email,
+);
+
+export const integration = sqliteTable(
+    "integration",
+    {
+        id: integer().primaryKey(),
+        company_id: integer()
+            .notNull()
+            .references(() => company.id, { onDelete: "cascade" }),
+        platform: text().notNull(),
+        api_key: text().notNull(),
+        enabled: integer({ mode: "boolean" }).notNull(),
+    },
+    (t) => [
+        uniqueIndex("idx_integration_company_platform").on(t.company_id, t.platform),
+    ],
+);
+
+export const integrationRelations = relations(integration, ({ one }) => ({
+    company: one(company, {
+        fields: [integration.company_id],
+        references: [company.id],
+    }),
+}));
+
+export const message = sqliteTable(
+    "message",
+    {
+        id: integer().primaryKey(),
+        customer_id: integer()
+            .notNull()
+            .references(() => customer.id),
+        content: text().notNull(),
+        company_id: integer().notNull(),
+        created_at: text().default(sql`CURRENT_TIMESTAMP`),
+        employee_id: text().references(() => employee.id),
+    }
+);
+
+export const messageRelations = relations(message, ({ one }) => ({
+    employee: one(employee, {
+        fields: [message.employee_id],
+        references: [employee.id],
+    }),
+    customer: one(customer, {
+        fields: [message.customer_id],
+        references: [customer.id],
+    }),
+}));
+
+export const session = sqliteTable("session", {
+    id: text().primaryKey(),
+    employee_id: text()
+        .notNull()
+        .references(() => employee.id, { onDelete: "cascade" }),
+    created_at: text().default(sql`CURRENT_TIMESTAMP`),
+    expires_at: text().notNull(),
+});
+
+export const sessionRelations = relations(session, ({ one }) => ({
+    employee: one(employee, {
+        fields: [session.employee_id],
+        references: [employee.id],
+    }),
+}));
+
+// Indexes
+export const idxSessionemployee_id = index("idx_session_employee_id").on(
+    session.employee_id,
+);
+export const idxSessionexpires_at = index("idx_session_expires_at").on(
+    session.expires_at,
+);

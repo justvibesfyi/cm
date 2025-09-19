@@ -17,7 +17,7 @@
 - multiple conversations per user (closed tickets)
 - initiate conversation
     - Might be limited based on the platform
-
+- see customer platform info (on hover?)
 
 - analytics
   - how many users 

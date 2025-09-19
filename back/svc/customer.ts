@@ -1,34 +1,46 @@
-import { sql } from "bun";
-import type { Customer } from "../types";
+import { eq } from "drizzle-orm";
+import { db } from "../db/db";
+import { customer } from "../db/schema";
 
 const useCustomer = () => {
     return {
         getById: async (id: number) => {
-            const customer = await sql`
-                SELECT * FROM customer WHERE id = ${id}
-            `.then(res => res[0]);
+            const [result] = await db
+                .select()
+                .from(customer)
+                .where(eq(customer.id, id));
 
-            return customer as Customer;
+            return result;
         },
         getCustomers: async (company_id: number) => {
-            const customers = await sql`
-                SELECT * FROM customer WHERE company_id = ${company_id}
-            `.then(res => res);
+            const customers = await db
+                .select()
+                .from(customer)
+                .where(eq(customer.company_id, company_id));
 
-            return customers as Customer[];
+            return customers;
         },
 
         ensureCustomer: async (platform: string, id: string, name: string, avatar: string | null, company_id: number) => {
-            const customer = await sql`
-                INSERT INTO customer (platform, customer_id, name, avatar, company_id)
-                    VALUES (${platform}, ${id}, ${name}, ${avatar}, ${company_id})
-                ON CONFLICT (platform, customer_id, company_id) DO UPDATE SET
-                    name = ${name},
-                    avatar = ${avatar}
-                RETURNING id;
-            `.then(res => res[0]);
+            const [result] = await db
+                .insert(customer)
+                .values({
+                    platform,
+                    platform_customer_id: id,
+                    name,
+                    avatar,
+                    company_id
+                })
+                .onConflictDoUpdate({
+                    target: [customer.platform, customer.platform_customer_id, customer.company_id],
+                    set: {
+                        name,
+                        avatar
+                    }
+                })
+                .returning({ id: customer.id });
 
-            return customer.id as number;
+            return result.id as number;
         }
     }
 };

@@ -1,4 +1,6 @@
-import { sql } from "bun";
+import { eq } from "drizzle-orm";
+import { db } from "../db/db";
+import { company, employee } from "../db/schema";
 import useEmployee from "./employee";
 
 const useCompany = () => {
@@ -15,17 +17,19 @@ const useCompany = () => {
 
 			if (user.company_id) return false;
 
-			const res = await sql`
-                INSERT INTO company (name, description, icon) VALUES (${name}, ${description}, ${icon}) RETURNING id
-            `.then((res) => res[0]);
+			const [newCompany] = await db
+				.insert(company)
+				.values({ name, description, icon })
+				.returning({ id: company.id });
 
-			if (!res) return false;
+			if (!newCompany) return false;
 
-			await sql`
-				UPDATE employee SET company_id = ${res.id} WHERE id = ${userid};
-			`;
+			await db
+				.update(employee)
+				.set({ company_id: newCompany.id })
+				.where(eq(employee.id, userid));
 
-			return res.id;
+			return newCompany.id;
 		},
 		updateCompany: async (
 			company_id: number,
@@ -33,11 +37,12 @@ const useCompany = () => {
 			description: string | null,
 			icon: string,
 		) => {
-			const res = await sql`
-                UPDATE company SET name = ${name}, description = ${description}, icon = ${icon} WHERE id = ${company_id};
-            `.then((res) => res[0]);
+			const result = await db
+				.update(company)
+				.set({ name, description, icon })
+				.where(eq(company.id, company_id));
 
-			return res;
+			return result;
 		},
 	};
 };

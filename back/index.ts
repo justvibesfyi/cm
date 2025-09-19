@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
-import { initializeDb } from "./database";
+import { seedDb } from "./db/seed";
 import { runEnabledLinks } from "./links";
 import { authRoutes } from "./routes/authRoutes";
 import { chatRoutes } from "./routes/chatRoutes";
@@ -10,7 +10,7 @@ import { manageRoutes } from "./routes/manageRoutes";
 
 // Initialize database
 try {
-	await initializeDb();
+	await seedDb();
 	await runEnabledLinks();
 	console.info("Database initialized successfully");
 } catch (error) {
