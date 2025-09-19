@@ -17,6 +17,5 @@ dist/
 !.vscode/extensions.json
 .idea
 .env*
-chatmesh.db*
 
-data/*.db
+data/*
