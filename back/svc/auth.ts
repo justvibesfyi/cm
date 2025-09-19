@@ -17,7 +17,7 @@ function useAuth() {
         gt(authCode.created_at, sql`datetime('now', '-1 minute')`)
       ));
 
-    return result.cnt === 0;
+    return !result || result.cnt === 0;
   }
 
   const generateCode = () => {
@@ -104,7 +104,7 @@ function useAuth() {
     const [user] = await db
       .select()
       .from(employee)
-      .where(eq(employee.ema, email));
+      .where(eq(employee.email, email));
 
     // if no, then add a user
     if (!user) {
@@ -119,11 +119,11 @@ function useAuth() {
 
     const sessionId = crypto.randomUUID();
     await db
-    INSEert(session)
+      .insert(session)
       .values({
         id: sessionId,
-        eid: sql`(SELECT id FROM employee WHERE email = ${email})`,
-        exp: sql`datetime('now', '+30 days')`
+        employee_id: sql`(SELECT id FROM employee WHERE email = ${email})`,
+        expires_at: sql`datetime('now', '+30 days')`,
       });
 
     return sessionId;
@@ -154,9 +154,10 @@ function useAuth() {
   const logoutEmployee = async (sessionId: string) => {
     const result = await db
       .delete(session)
-      .where(eq(session.id, sessionId));
+      .where(eq(session.id, sessionId))
+      .returning({ id: session.id });
 
-    return result
+    return result.length > 0;
   }
 
   return {

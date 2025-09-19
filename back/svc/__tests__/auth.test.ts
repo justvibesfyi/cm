@@ -16,8 +16,8 @@ describe("useAuth", () => {
 	let auth: ReturnType<typeof useAuth>;
 
 	beforeAll(async () => {
-		process.env.DATABASE_URL = "sqlite::memory:";
-
+		console.log(process.env.NODE_ENV)
+		process.env.DATABASE_URL = ":memory:";
 		auth = useAuth();
 	});
 
@@ -33,8 +33,8 @@ describe("useAuth", () => {
 	beforeEach(async () => {
 		// Clean up tables before each test
 		await db.delete(authCode);
-		await db.delete(session);
 		await db.delete(employee);
+		await db.delete(session);
 	});
 
 	describe("generateCode", () => {
@@ -68,32 +68,6 @@ describe("useAuth", () => {
 			console.log(returnCode);
 
 			expect(returnCode).toBe(code);
-		});
-
-		test("Create a new table, insert a row and retrieve it", async () => {
-			const tableName = `temp_test`;
-
-			// Create table
-			await db.run(sql`CREATE TABLE temp_test (
-				id INTEGER PRIMARY KEY,
-				name TEXT,
-				value INTEGER
-			)`);
-
-			// Insert row
-			const testName = "test_item";
-			const testValue = 42;
-			await db.run(sql`INSERT INTO temp_test (name, value) VALUES (${testName}, ${testValue})`);
-
-			// Retrieve row
-			const result = await db.all(sql`SELECT * FROM temp_test WHERE name = ${testName}`);
-
-			expect(result).toHaveLength(1);
-			expect(result[0].name).toBe(testName);
-			expect(result[0].value).toBe(testValue);
-
-			// Clean up
-			await db.run(sql`DROP TABLE ${sql.identifier(tableName)}`);
 		});
 
 		test("should replace existing code for same email", async () => {
@@ -131,10 +105,10 @@ describe("useAuth", () => {
 				.orderBy(authCode.email);
 
 			expect(result).toHaveLength(2);
-			expect(result[0].email).toBe(email1);
-			expect(result[0].code).toBe(code1);
-			expect(result[1].email).toBe(email2);
-			expect(result[1].code).toBe(code2);
+			expect(result[0]!.email).toBe(email1);
+			expect(result[0]!.code).toBe(code1);
+			expect(result[1]!.email).toBe(email2);
+			expect(result[1]!.code).toBe(code2);
 		});
 	});
 

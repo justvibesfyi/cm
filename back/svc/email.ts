@@ -1,7 +1,12 @@
 import formData from "form-data";
 import Mailgun from "mailgun.js";
 import { config } from "../config/index";
-import type { EmailSendResult, EmailTemplate } from "./interfaces";
+
+
+interface EmailSendResult {
+    success: boolean,
+    messageId: string,
+}
 
 // Mailgun client singleton
 let mailgunClient: any = null;
