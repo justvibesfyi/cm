@@ -1,54 +1,57 @@
-// Telegram platform link implementation placeholder
+import TelegramBot from "node-telegram-bot-api";
+import useCustomer from "../svc/customer";
+import useMessage from "../svc/message";
 
-import type {
-  OutboundMessage,
-  PlatformConfig,
-  StandardMessage,
-} from "../types/index";
-import { BasePlatformLink } from "./base";
-import type { TelegramConfig } from "./interfaces";
+const token = process.env.TELEGRAM_BOT_TOKEN;
 
-export class TelegramLink extends BasePlatformLink {
-  public readonly platformName = "telegram";
-  private config?: TelegramConfig;
-
-  async handleInboundMessage(rawMessage: any): Promise<StandardMessage> {
-    // TODO: Implement Telegram message parsing
-    throw new Error("Not implemented");
-  }
-
-  async enrichMessage(message: StandardMessage): Promise<StandardMessage> {
-    // TODO: Implement message enrichment with Telegram user data
-    throw new Error("Not implemented");
-  }
-
-  async handleOutboundMessage(message: OutboundMessage): Promise<SendResult> {
-    // TODO: Implement outbound message handling
-    throw new Error("Not implemented");
-  }
-
-  async transformToPlatformFormat(message: OutboundMessage): Promise<any> {
-    // TODO: Implement transformation to Telegram format
-    throw new Error("Not implemented");
-  }
-
-  async validateConfiguration(config: PlatformConfig): Promise<boolean> {
-    // TODO: Implement configuration validation
-    throw new Error("Not implemented");
-  }
-
-  async testConnection(): Promise<ConnectionStatus> {
-    // TODO: Implement connection testing
-    throw new Error("Not implemented");
-  }
-
-  async initialize(config: PlatformConfig): Promise<void> {
-    // TODO: Implement initialization
-    throw new Error("Not implemented");
-  }
-
-  async shutdown(): Promise<void> {
-    // TODO: Implement shutdown
-    throw new Error("Not implemented");
-  }
+if (!token) {
+    throw new Error("TELEGRAM_BOT_TOKEN environment variable is required");
 }
+
+export const createTelegramLink = (token: string, company_id: number) => {
+    const bot = new TelegramBot(token, { polling: true });
+
+    console.log("Created a telegram bot")
+
+    bot.on("message", async (msg) => {
+        try {
+            console.log(
+                "📥 Incoming message from Telegram:",
+                msg.from?.username || "Unknown user",
+            );
+
+            if (!msg.from) {
+                console.warn("Unknown telegram user. Can't save.");
+                return;
+            }
+
+            const profilePhoto = await bot.getUserProfilePhotos(msg.from.id);
+            const data = {
+                ...msg,
+                avatarUrl: profilePhoto?.photos[0]?.[0]
+                    ? await bot.getFileLink(profilePhoto.photos[0][0].file_id)
+                    : undefined,
+            };
+
+            const customerDb = useCustomer();
+            const id = await customerDb.ensureCustomer('telegram', msg.from.id.toString(), msg.from.username ?? msg.from.first_name, data.avatarUrl || null, company_id);
+
+            const messageDb = useMessage();
+            await messageDb.saveCustomerMessage(data.text || '<unsupported message>', company_id, id);
+        } catch (error) {
+            console.error("Error processing message:", error);
+        }
+    });
+
+    return {
+        sendMessage: async (chat_id: string, msg: string): Promise<boolean> => {
+            try {
+                await bot.sendMessage(chat_id, msg);
+                return true;
+            } catch (e) {
+                console.error("Failed sending message: ", e);
+                return false;
+            }
+        },
+    };
+};

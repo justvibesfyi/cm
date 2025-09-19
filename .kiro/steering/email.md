@@ -6,18 +6,7 @@ ChatMesh uses mailgun.js as the primary email service provider for sending authe
 
 ### Configuration
 
-All email configuration should be managed through environment variables:
-
-```bash
-# Required Mailgun configuration
-MAILGUN_API_KEY=your_mailgun_api_key
-MAILGUN_DOMAIN=your_mailgun_domain.com
-MAILGUN_FROM_EMAIL=noreply@your_mailgun_domain.com
-MAILGUN_FROM_NAME="ChatMesh"
-
-# Optional configuration
-MAILGUN_EU_REGION=false  # Set to true if using EU region
-```
+All email configuration should be managed through environment variables
 
 ### Implementation Guidelines
 

@@ -113,7 +113,7 @@ async function applyMigration(migration: Migration): Promise<void> {
 /**
  * Run database migrations
  */
-export async function runMigrations(): Promise<void> {
+export async function migrateDb(): Promise<void> {
 	logger.info("Starting database migrations");
 
 	try {

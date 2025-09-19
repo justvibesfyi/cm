@@ -1,4 +1,4 @@
-import type { Customer, Employee, Message } from "@back/types";
+import type { Customer, Message } from "@back/types";
 import type React from "react";
 import {
 	createContext,
@@ -11,10 +11,11 @@ import { api } from "@/lib/api";
 
 export interface ChatState {
 	convos: Customer[];
-	selectConvo: (contact: Customer) => void;
+	selectConvo: (contact: Customer | null) => void;
 	selectedConvo: Customer | null;
 
 	messages: Message[];
+	sendMessage: (content: string, convo_id: number) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatState | undefined>(undefined);
@@ -42,9 +43,17 @@ const getMessages = async (convoId: number) => {
 	}
 
 	const { msgs } = await res.json();
-	
-	console.log(msgs)
 	return msgs;
+};
+
+const sendMessage = async (content: string, convo_id: number) => {
+	const res = await api.chat.send.$post({
+		json: { content, convoId: convo_id },
+	});
+
+	if (!res.ok) {
+		console.error("Failed to send message");
+	}
 };
 
 export default function ChatProvider({
@@ -56,9 +65,19 @@ export default function ChatProvider({
 	const [messages, setMessages] = useState([] as Message[]);
 	const [selectedConvo, setSelectedConvo] = useState<Customer | null>(null);
 
-	const selectConvo = useCallback((contact: Customer) => {
-		setSelectedConvo(contact);
+	const selectConvo = useCallback((contact: Customer | null) => {
+		setSelectedConvo((prev) => (prev?.id === contact?.id ? null : contact));
 	}, []);
+
+	const handleSendMessage = useCallback(
+		async (content: string, convo_id: number) => {
+			await sendMessage(content, convo_id);
+			await getMessages(convo_id).then((msgs) => {
+				setMessages(msgs);
+			});
+		},
+		[],
+	);
 
 	// FETCH MESSAGES WHEN CONVO IS SELECTED
 	useEffect(() => {
@@ -74,11 +93,38 @@ export default function ChatProvider({
 
 	// FETCH CONVOS
 	useEffect(() => {
-		getConvos().then((convos) => {
-			if (!convos) return;
-			setConvos(convos);
-		});
+		let isMounted = true;
+		let timeoutId: NodeJS.Timeout | undefined;
+
+		const fetchConvos = async () => {
+			if (!isMounted) return;
+
+			try {
+				const newConvos = await getConvos();
+				if (isMounted && newConvos) {
+					setConvos(newConvos);
+				}
+			} catch (error) {
+				console.error("Failed to fetch conversations:", error);
+			}
+
+			if (isMounted) {
+				timeoutId = setTimeout(fetchConvos, 3000);
+			}
+		};
+
+		fetchConvos();
+
+		return () => {
+			isMounted = false;
+			if (timeoutId) {
+				clearTimeout(timeoutId);
+			}
+		};
 	}, []);
+
+	// start socket connection
+	useEffect(() => {}, []);
 
 	return (
 		<ChatContext.Provider
@@ -87,6 +133,7 @@ export default function ChatProvider({
 				selectConvo,
 				selectedConvo,
 				messages,
+				sendMessage: handleSendMessage,
 			}}
 		>
 			{children}

@@ -1,3 +1,4 @@
+import { Label } from "@radix-ui/react-label";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	Menu,
@@ -54,7 +55,7 @@ export default function MainApp() {
 	};
 
 	return (
-		<div className="h-screen bg-white flex overflow-hidden">
+		<div className="h-screen flex overflow-hidden bg-background">
 			{/* Mobile Sidebar Overlay */}
 			{isSidebarOpen && (
 				<Button
@@ -66,18 +67,21 @@ export default function MainApp() {
 			{/* Sidebar */}
 			<div
 				className={`
-        fixed md:relative inset-y-0 left-0 z-50 w-80 bg-white border-r border-gray-200 flex flex-col
+        fixed md:relative inset-y-0 left-0 z-50 w-80 bg-background border-r flex flex-col
         transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        border-border
       `}
 			>
 				{/* Sidebar Header */}
-				<div className="p-4 border-b border-gray-200">
+				<div className="p-4 border-b border-border">
 					<div className="flex items-center justify-between">
-						<h1 className="text-xl font-semibold text-gray-900">Messages</h1>
+						<Label className="text-xl font-semibold text-foreground">
+							Messages
+						</Label>
 						<Button
 							onClick={() => setIsSidebarOpen(false)}
-							className="md:hidden p-1 rounded-full hover:bg-gray-100 transition-colors"
+							className="md:hidden p-1 rounded-full hover:bg-accent transition-colors"
 						>
 							<X size={20} />
 						</Button>
@@ -96,10 +100,10 @@ export default function MainApp() {
 			{/* Main Content */}
 			<div className="flex-1 flex flex-col">
 				{/* Mobile Header */}
-				<div className="md:hidden flex items-center p-4 border-b border-gray-200 bg-white">
+				<div className="md:hidden flex items-center p-4 border-b border-border bg-background">
 					<Button
 						onClick={() => setIsSidebarOpen(true)}
-						className="p-2 rounded-full hover:bg-gray-100 transition-colors mr-3"
+						className="p-2 rounded-full hover:bg-accent transition-colors mr-3"
 					>
 						<Menu size={20} />
 					</Button>
@@ -111,10 +115,10 @@ export default function MainApp() {
 								className="w-8 h-8 rounded-full mr-3"
 							/>
 							<div>
-								<h2 className="font-medium text-gray-900">
+								<h2 className="font-medium text-foreground">
 									{selectedConvo.name}
 								</h2>
-								<p className="text-xs text-gray-500">
+								<p className="text-xs text-muted-foreground">
 									{selectedConvo.isOnline ? "Online" : "Last seen recently"}
 								</p>
 							</div>
@@ -122,13 +126,13 @@ export default function MainApp() {
 					)}
 					{selectedConvo && (
 						<div className="flex items-center space-x-2">
-							<Button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+							<Button className="p-2 rounded-full hover:bg-accent transition-colors">
 								<Phone size={18} />
 							</Button>
-							<Button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+							<Button className="p-2 rounded-full hover:bg-accent transition-colors">
 								<Video size={18} />
 							</Button>
-							<Button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+							<Button className="p-2 rounded-full hover:bg-accent transition-colors">
 								<MoreHorizontal size={18} />
 							</Button>
 						</div>
@@ -139,13 +143,16 @@ export default function MainApp() {
 				{selectedConvo ? (
 					<ChatWindow contact={selectedConvo} />
 				) : (
-					<div className="flex-1 flex items-center justify-center bg-gray-50">
+					<div className="flex-1 flex items-center justify-center bg-muted">
 						<div className="text-center">
-							<MessageCircle size={64} className="text-gray-300 mx-auto mb-4" />
-							<h3 className="text-lg font-medium text-gray-900 mb-2">
+							<MessageCircle
+								size={64}
+								className="text-muted-foreground mx-auto mb-4"
+							/>
+							<h3 className="text-lg font-medium text-foreground mb-2">
 								Select a conversation
 							</h3>
-							<p className="text-gray-500">
+							<p className="text-muted-foreground">
 								Choose a contact to start messaging
 							</p>
 						</div>

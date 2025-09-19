@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { createMiddleware } from "hono/factory";
 import { z } from "zod";
+import { sendMessageToLink } from "../links";
 import useCustomer from "../svc/customer";
 import useEmployee from "../svc/employee";
 import useMessage from "../svc/message";
@@ -9,13 +9,13 @@ import requiresAuth from "./middleware/requiresAuth";
 
 // Validation schemas
 const sendMessageSchema = z.object({
-	conversationId: z.string().min(1),
+	convoId: z.number(),
 	content: z.string().min(1).max(4000),
-	messageType: z
-		.enum(["text", "image", "file", "sticker"])
-		.optional()
-		.default("text"),
-	replyToId: z.string().optional(),
+	// messageType: z
+	// 	.enum(["text", "image", "file", "sticker"])
+	// 	.optional()
+	// 	.default("text"),
+	// replyToId: z.string().optional(),
 });
 
 const getConversationsSchema = z.object({
@@ -62,10 +62,38 @@ export const chatRoutes = new Hono()
 		const customer = useCustomer();
 		const convos = await customer.getCustomers(employee.company_id);
 
-		console.log("Company id:", employee.company_id);
-		console.log("Convos:", JSON.stringify(convos));
-
 		return c.json({ success: true, convos });
+	})
+
+	.post("/send", zValidator("json", sendMessageSchema), async (c) => {
+		console.log("Trying to send")
+		const emp = useEmployee();
+		const employee = await emp.getFullEmployee(c.var.user.id);
+		if (!employee.company_id) return c.json({ error: "Not in a company" }, 401);
+
+		console.log("Employee in a company")
+
+		const { content, convoId } = c.req.valid("json");
+		const message = useMessage();
+		await message.saveEmployeeMessage(
+			content,
+			employee.company_id,
+			employee.id,
+			convoId,
+		);
+
+		console.log("Saved message")
+
+		const customer = useCustomer();
+		const sendTo = await customer.getById(convoId);
+
+		console.log("Got customer", sendTo)
+
+		const success = await sendMessageToLink(employee.company_id, sendTo.platform, sendTo.customer_id, content);
+
+		console.log("Sent to link")
+
+		return c.json({ success });
 	})
 
 	// Get messages for a conversation

@@ -1,39 +1,27 @@
-import type { Message } from "@back/types/index";
-import {
-	EyeClosed,
-	MoreHorizontal,
-	Paperclip,
-	Phone,
-	Send,
-	Smile,
-	Video,
-} from "lucide-react";
+import type { Customer } from "@back/types";
+import { MoreHorizontal, Send, X } from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api";
+import { useRef, useState } from "react";
 import { useChat } from "@/providers/chat";
 import MessageList from "./MessageList";
 import { Button } from "./ui/button";
 
 interface ChatWindowProps {
-	contact: Contact;
+	contact: Customer;
 }
-
-const fetchUserMessage = async (userId: string): Promise<Message[]> => {
-	// const res = api.chat.
-
-	return [];
-};
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ contact }) => {
 	const [messageText, setMessageText] = useState("");
-	const { messages } = useChat();
+	const { messages, selectConvo, sendMessage } = useChat();
 
-	console.log("Messages:", messages)
+	console.log("Messages:", messages);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	const handleSendMessage = (e: React.FormEvent) => {
+	const handleSendMessage = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (messageText.trim() !== "") {
+			sendMessage(messageText, contact.id);
+		}
 		setMessageText("");
 	};
 
@@ -62,11 +50,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact }) => {
           <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
             <Video size={20} className="text-gray-600" />
           </button> */}
-					<Button className="p-2 rounded-full">
+					<Button disabled variant="outline" className="p-2 rounded-full">
 						<MoreHorizontal size={20} className="" />
 					</Button>
-					<Button className="p-2 rounded-full transition-colors">
-						<EyeClosed size={20} className="text-gray-600" />
+					<Button
+						onClick={() => selectConvo(null)}
+						variant="outline"
+						className="p-2 rounded-full transition-colors"
+					>
+						<X size={20} className="text-gray-600" />
 					</Button>
 				</div>
 			</div>
@@ -105,7 +97,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact }) => {
             </button> */}
 					</div>
 
-					<button
+					<Button
 						type="submit"
 						disabled={!messageText.trim()}
 						className={`
@@ -118,7 +110,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact }) => {
             `}
 					>
 						<Send size={18} />
-					</button>
+					</Button>
 				</div>
 			</form>
 		</div>

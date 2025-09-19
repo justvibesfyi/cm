@@ -1,24 +1,20 @@
-import { initializeDatabase } from "./db";
-import { runMigrations } from "./migrator";
-import { seed } from "./seed.js";
+import { setDbOptions } from "./db";
+import { migrateDb } from "./migrator";
+import { seedDb } from "./seed.js";
 
 // Database module exports
-export { initializeDatabase } from "./db";
+export { setDbOptions as initializeDatabase } from "./db";
 
 export {
 	getMigrationStatus,
-	runMigrations,
+	migrateDb as runMigrations,
 } from "./migrator.js";
 
-// Database initialization function
-export async function initializeApp(): Promise<void> {
-	// Initialize database connection
+export async function initializeDb(): Promise<void> {
 
-  console.log(process.env.DATABASE_URL)
-	initializeDatabase();
+	console.log("Database Url: ", process.env.DATABASE_URL)
 
-	
-	// Run migrations
-	await runMigrations();
-	await seed();
+	setDbOptions();
+	await migrateDb();
+	await seedDb();
 }

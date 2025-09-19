@@ -1,6 +1,6 @@
 import { sql } from 'bun';
 
-export async function initializeDatabase() {
+export async function setDbOptions() {
   await sql`
     PRAGMA journal_mode = WAL;
     PRAGMA busy_timeout = 5000;

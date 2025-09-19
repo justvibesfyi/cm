@@ -1,5 +1,5 @@
-import "@fontsource/geist"
-import "@fontsource/inter"
+import "@fontsource/geist";
+import "@fontsource/inter";
 import "./index.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { AuthProvider, useAuth } from "./providers/auth.tsx";
+import { ThemeProvider } from "./providers/theme.tsx";
 import { routeTree } from "./routeTree.gen.ts";
 
 const queryClient = new QueryClient();
@@ -35,9 +36,11 @@ const InnerApp = () => {
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>
 		<QueryClientProvider client={queryClient}>
-			<AuthProvider>
-				<InnerApp />
-			</AuthProvider>
+			<ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+				<AuthProvider>
+					<InnerApp />
+				</AuthProvider>
+			</ThemeProvider>
 		</QueryClientProvider>
 	</StrictMode>,
 );

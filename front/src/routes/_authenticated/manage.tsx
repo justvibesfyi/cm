@@ -1,9 +1,11 @@
+import type { Platform } from "@back/types";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	Badge,
 	Eye,
 	EyeOff,
+	Hash,
 	Mail,
 	MessageCircle,
 	Save,
@@ -14,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import ManageBusinessSettings from "@/components/ManageBusinessSettings";
+import PlatformIcon from "@/components/PlatformIcon";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -27,10 +30,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 
-interface Platform {
-	id: string;
+interface Integration {
+	id: Platform;
 	name: string;
-	icon: React.ComponentType<any>;
 	color: string;
 	enabled: boolean;
 	apiKey: string;
@@ -49,11 +51,18 @@ export const Route = createFileRoute("/_authenticated/manage")({
 });
 
 function Manage() {
-	const [platforms, setPlatforms] = useState<Platform[]>([
+	const [platforms, setPlatforms] = useState<Integration[]>([
 		{
 			id: "telegram",
 			name: "Telegram",
-			icon: Send,
+			color: "text-blue-400",
+			enabled: true,
+			apiKey: "1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi",
+			showApiKey: false,
+		},
+		{
+			id: "zalo",
+			name: "Zalo",
 			color: "text-blue-400",
 			enabled: true,
 			apiKey: "1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi",
@@ -63,8 +72,7 @@ function Manage() {
 
 	const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
 
-	const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-	]);
+	const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
 	const [newMemberEmail, setNewMemberEmail] = useState("");
 
@@ -153,19 +161,19 @@ function Manage() {
 							{/* Platform Grid */}
 							<div className="grid grid-cols-3 gap-3">
 								{platforms.map((platform) => (
-									<Button
+									<div
 										key={platform.id}
-										variant={
-											selectedPlatform === platform.id
-												? "primary"
-												: "primary"
-										}
-										className={`relative p-4 h-auto flex-col gap-2 ${
+										variant={"outline"}
+										className={`relative p-4 h-auto flex-col gap-2 w-full flex items-center ${
 											selectedPlatform === platform.id
 												? "border border-primary"
 												: "border"
 										}`}
-										onClick={() => setSelectedPlatform(prev => prev === platform.id ? null : platform.id)}
+										onClick={() =>
+											setSelectedPlatform((prev) =>
+												prev === platform.id ? null : platform.id,
+											)
+										}
 									>
 										{/* Status Indicator */}
 										<div
@@ -173,15 +181,16 @@ function Manage() {
 												platform.enabled ? "bg-green-500" : "bg-gray-300"
 											}`}
 										/>
-										<platform.icon
+										<PlatformIcon platform={platform.id} className="w-10 h-10" />
+										{/* <platform.icon
 											className={`w-6 h-6 ${
 												platform.enabled
 													? platform.color
 													: "text-muted-foreground"
-											}`}
-										/>
+											}`} */}
+
 										<span className="text-sm font-medium">{platform.name}</span>
-									</Button>
+									</div>
 								))}
 							</div>
 
@@ -191,7 +200,8 @@ function Manage() {
 									<CardContent className="p-4">
 										<div className="flex items-center justify-between mb-4">
 											<div className="flex items-center gap-3">
-												<selectedPlatformData.icon
+												<PlatformIcon
+													platform={selectedPlatformData.id}
 													className={`w-6 h-6 ${selectedPlatformData.color}`}
 												/>
 												<div>

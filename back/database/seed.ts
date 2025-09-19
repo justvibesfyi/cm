@@ -1,6 +1,6 @@
 import { sql } from "bun";
 
-export const seed = async () => {
+export const seedDb = async () => {
 	const res = await sql`SELECT COUNT(*) as c FROM employee`.then(res => res[0]);
 	if (res.c > 0) return;
 
@@ -30,5 +30,9 @@ export const seed = async () => {
 
 		INSERT INTO message(id, content, company_id, employee_id, customer_id, created_at) VALUES (3, 'Yo whats up.', 1, NULL, 2, datetime('now', '-2 minutes'));
 		INSERT INTO message(id, content, company_id, employee_id, customer_id, created_at) VALUES (4, "Don't talk to me like that!", 1, "1", 2, datetime('now', '-1 minutes'));
+	`
+
+	await sql`
+		INSERT INTO integration(id, company_id, platform, api_key, enabled) VALUES (1, 1, 'telegram', '6754974318:AAFjhSFtScQ91ZlsY10JB8F_jIg02L75Yb0', 1);
 	`
 };

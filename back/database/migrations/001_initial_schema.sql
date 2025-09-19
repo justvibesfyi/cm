@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS customer (
   platform_channel_id TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_customers_customer_id ON customer(customer_id, company_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_platform_customer_company ON customer(platform, customer_id, company_id);
 
 -- Messages (All messages in a convo. They can be sent either by a customer or an employee)
 CREATE TABLE IF NOT EXISTS message (
@@ -71,9 +71,20 @@ CREATE TABLE IF NOT EXISTS message (
     company_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- set which employee sent the message. If not set, then the customer sent them essage
-    employee_id TEXT 
-    -- FOREIGN KEY (employee_id) REFERENCES employee(id),
-    -- FOREIGN KEY (customer_id) REFERENCES customers(id),
-    -- CHECK (employee_id IS NOT NULL OR customer_id IS NOT NULL),
-    -- CHECK (employee_id IS NULL OR customer_id IS NULL)
+    employee_id TEXT,
+    FOREIGN KEY (employee_id) REFERENCES employee(id),
+    FOREIGN KEY (customer_id) REFERENCES customers(id),
+    CHECK (employee_id IS NOT NULL OR customer_id IS NOT NULL),
+    CHECK (employee_id IS NULL OR customer_id IS NULL)
 );
+
+CREATE TABLE IF NOT EXISTS integration (
+  id INTEGER PRIMARY KEY,
+  company_id INTEGER NOT NULL,
+  platform TEXT NOT NULL,
+  api_key TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL,
+  FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_integration_company_platform ON integration (company_id, platform)

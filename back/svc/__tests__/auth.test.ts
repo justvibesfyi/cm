@@ -7,7 +7,7 @@ import {
 	test,
 } from "bun:test";
 import { sql } from "bun";
-import { initializeApp } from "../../database";
+import { initializeDb } from "../../database";
 import useAuth from "../auth.js";
 
 describe("useAuth", () => {
@@ -17,7 +17,7 @@ describe("useAuth", () => {
 	beforeAll(async () => {
 		process.env.DATABASE_URL = "sqlite::memory:";
 
-		await initializeApp();
+		await initializeDb();
 
 		auth = useAuth();
 	});

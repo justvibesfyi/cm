@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
-import { initializeApp } from "./database";
+import { initializeDb } from "./database";
+import { runEnabledLinks } from "./links";
 import { authRoutes } from "./routes/authRoutes";
 import { chatRoutes } from "./routes/chatRoutes";
 import { companyRoutes } from "./routes/companyRoutes";
@@ -9,7 +10,8 @@ import { manageRoutes } from "./routes/manageRoutes";
 
 // Initialize database
 try {
-	await initializeApp();
+	await initializeDb();
+	await runEnabledLinks();
 	console.info("Database initialized successfully");
 } catch (error) {
 	console.error("Failed to initialize database", { error });
@@ -31,4 +33,5 @@ app
 	.get("*", serveStatic({ path: "./front/dist/index.html" }));
 
 export default app;
+
 export type ApiTypes = typeof apiRoutes;

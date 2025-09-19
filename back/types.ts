@@ -1,4 +1,5 @@
 export interface Employee {
+    id: string;
     email: string;
     onboarded: number;
     first_name: string;
@@ -19,6 +20,8 @@ export interface Customer {
     id: number;
     name: string;
     avatar: string;
+    platform: string;
+    customer_id: string;
 }
 
 export interface Message {
@@ -28,3 +31,11 @@ export interface Message {
     employee_id: string | null;
     customer_id: number | null;
 }
+
+export interface Integration {
+    platform: string;
+    company_id: number;
+    api_key: string;
+}
+
+export type Platform = 'zalo' | 'discord' | 'telegram' | 'whatsapp' | 'email';

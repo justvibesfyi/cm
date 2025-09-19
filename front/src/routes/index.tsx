@@ -19,6 +19,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { useState } from "react";
+import PlatformIcon from "@/components/PlatformIcon";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -33,16 +34,11 @@ function ChatMeshLanding() {
 	const platforms = [
 		{
 			name: "WhatsApp",
-			icon: <MessageSquare className="w-8 h-8" />,
+			icon: <PlatformIcon platform="whatsapp" className="w-8 h-8" />,
 			color: "#25D366",
 		},
-		{ name: "Telegram", icon: <Send className="w-8 h-8" />, color: "#0088CC" },
-		{
-			name: "Messenger",
-			icon: <MessageCircle className="w-8 h-8" />,
-			color: "#1877F2",
-		},
-		{ name: "Email", icon: <Mail className="w-8 h-8" />, color: "#EA4335" },
+		{ name: "Telegram", icon: <PlatformIcon platform="telegram" className="w-8 h-8" />, color: "#0088CC" },
+		{ name: "Email", icon: <PlatformIcon platform="email" className="w-8 h-8" />, color: "#EA4335" },
 		{
 			name: "SMS",
 			icon: <MessageSquareText className="w-8 h-8" />,

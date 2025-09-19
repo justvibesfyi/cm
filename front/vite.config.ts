@@ -3,6 +3,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { defineConfig } from "vite";
+import svgr from "vite-plugin-svgr";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -11,9 +12,9 @@ export default defineConfig({
       target: "react",
       autoCodeSplitting: true,
     }),
+    svgr({ "include": "**/*.svg" }),
     react(),
     tailwindcss(),
-
   ],
   resolve: {
     alias: {
@@ -26,6 +27,7 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
+        ws: true,
       },
     },
   },

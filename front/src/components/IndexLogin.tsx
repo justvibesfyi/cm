@@ -1,5 +1,4 @@
 import { useForm } from "@tanstack/react-form";
-import { useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { Button } from "./ui/button";
@@ -10,7 +9,6 @@ const loginSchema = z.object({
 });
 
 const IndexLogin = () => {
-	const nav = useNavigate();
 	const form = useForm({
 		defaultValues: {
 			email: "",
