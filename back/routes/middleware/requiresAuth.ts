@@ -7,6 +7,7 @@ const requiresAuth = createMiddleware<{
 		user: {
 			id: string;
 			email: string;
+			company_id: number | null;
 		};
 	};
 }>(async (c, next) => {
@@ -24,7 +25,6 @@ const requiresAuth = createMiddleware<{
 	}
 
 	c.set("user", user);
-
 	return next();
 });
 

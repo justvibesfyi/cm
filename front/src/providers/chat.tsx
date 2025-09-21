@@ -48,7 +48,7 @@ const getMessages = async (convoId: number) => {
 
 const sendMessage = async (content: string, convo_id: number) => {
 	const res = await api.chat.send.$post({
-		json: { content, convoId: convo_id },
+		json: { content, customer_id: convo_id },
 	});
 
 	if (!res.ok) {

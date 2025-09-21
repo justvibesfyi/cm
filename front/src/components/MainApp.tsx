@@ -1,4 +1,3 @@
-import { Label } from "@radix-ui/react-label";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	Menu,
@@ -14,6 +13,7 @@ import ContactsList from "@/components/ContactsList";
 import UserProfile from "@/components/UserProfile";
 import { Button } from "@/components/ui/button";
 import { useChat } from "@/providers/chat";
+import { Label } from "./ui/label";
 
 export const Route = createFileRoute("/_authenticated/app")({
 	component: MainApp,

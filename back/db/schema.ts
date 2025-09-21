@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const authCode = sqliteTable("auth_code", {
     id: integer().primaryKey({ autoIncrement: true }),
@@ -89,8 +89,21 @@ export const integration = sqliteTable(
         company_id: integer()
             .notNull()
             .references(() => company.id, { onDelete: "cascade" }),
-        platform: text().notNull(),
-        api_key: text().notNull(),
+        platform: text({ enum: ["telegram", "zalo", "email", "whatsapp", "wechat", "discord"] }).notNull(),
+        /** zalo: app_id   
+         *  telegram: api_key
+        */
+        key_1: text().notNull(),
+        /** zalo: secret_key / app_secret */
+        key_2: text(),
+        /** zalo: webhook_secret */
+        key_3: text(),
+        /** zalo: access_token */
+        key_4: text(),
+        /** zalo: refresh_token */
+        key_5: text(),
+        /** zalo: timestamp */
+        key_6: text(),
         enabled: integer({ mode: "boolean" }).notNull(),
     },
     (t) => [

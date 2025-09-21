@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { z } from "zod";
+import { insertMessageSchema } from "../db/schema.zod";
 import { sendMessageToLink } from "../links";
 import useCustomer from "../svc/customer";
 import useEmployee from "../svc/employee";
@@ -8,48 +8,10 @@ import useMessage from "../svc/message";
 import requiresAuth from "./middleware/requiresAuth";
 
 // Validation schemas
-const sendMessageSchema = z.object({
-	convoId: z.number(),
-	content: z.string().min(1).max(4000),
-	// messageType: z
-	// 	.enum(["text", "image", "file", "sticker"])
-	// 	.optional()
-	// 	.default("text"),
-	// replyToId: z.string().optional(),
+const sendMessageSchema = insertMessageSchema.pick({
+	content: true,
+	customer_id: true
 });
-
-const getConversationsSchema = z.object({
-	status: z.enum(["open", "closed", "pending"]).optional(),
-	platform: z.enum(["telegram", "zalo"]).optional(),
-	limit: z.coerce.number().min(1).max(100).optional().default(20),
-	offset: z.coerce.number().min(0).optional().default(0),
-});
-
-const getMessagesSchema = z.object({
-	// convoId: z.string().min(1),
-	// limit: z.coerce.number().min(1).max(100).optional().default(50),
-	// offset: z.coerce.number().min(0).optional().default(0),
-	// before: z.string().optional(),
-});
-
-const updateConversationSchema = z.object({
-	status: z.enum(["open", "closed", "pending"]).optional(),
-	assignedTo: z.string().optional(),
-});
-
-// Todo figure out how to chain middlewares and preserve both contexts
-// const requiresCompany = createMiddleware<{
-// 	Variables: {
-// 		company_id: number
-// 	};
-// }>(async (c, next) => {
-// 	const emp = useEmployee();
-// 	const employee = await emp.getFullEmployee(c.var.);
-// 	if (!employee.company_id) return c.json({ error: "Not in a company" }, 401);
-
-// 	c.set("company", employee.company_id);
-// 	return next();
-// });
 
 export const chatRoutes = new Hono()
 	.use("*", requiresAuth)
@@ -57,7 +19,7 @@ export const chatRoutes = new Hono()
 	.get("/convos", async (c) => {
 		const emp = useEmployee();
 		const employee = await emp.getFullEmployee(c.var.user.id);
-		if (!employee.company_id) return c.json({ error: "Not in a company" }, 401);
+		if (!employee?.company_id) return c.json({ error: "Not in a company" }, 401);
 
 		const customer = useCustomer();
 		const convos = await customer.getCustomers(employee.company_id);
@@ -66,32 +28,38 @@ export const chatRoutes = new Hono()
 	})
 
 	.post("/send", zValidator("json", sendMessageSchema), async (c) => {
-		console.log("Trying to send")
+		console.log("Trying to send");
 		const emp = useEmployee();
 		const employee = await emp.getFullEmployee(c.var.user.id);
-		if (!employee.company_id) return c.json({ error: "Not in a company" }, 401);
+		if (!employee?.company_id) return c.json({ error: "Not in a company" }, 401);
 
-		console.log("Employee in a company")
+		console.log("Employee in a company");
 
-		const { content, convoId } = c.req.valid("json");
+		const { content, customer_id } = c.req.valid("json");
 		const message = useMessage();
 		await message.saveEmployeeMessage(
 			content,
 			employee.company_id,
 			employee.id,
-			convoId,
+			customer_id,
 		);
 
-		console.log("Saved message")
+		console.log("Saved message");
 
 		const customer = useCustomer();
-		const sendTo = await customer.getById(convoId);
+		const sendTo = await customer.getById(customer_id);
 
-		console.log("Got customer", sendTo)
+		if (!sendTo) return c.json({ error: "Customer not found" }, 404);
 
-		const success = await sendMessageToLink(employee.company_id, sendTo.platform, sendTo.customer_id, content);
 
-		console.log("Sent to link")
+		const success = await sendMessageToLink(
+			employee.company_id,
+			sendTo.platform,
+			sendTo.platform_customer_id,
+			content,
+		);
+
+		console.log("Sent to link");
 
 		return c.json({ success });
 	})
@@ -103,7 +71,7 @@ export const chatRoutes = new Hono()
 		async (c) => {
 			const emp = useEmployee();
 			const employee = await emp.getFullEmployee(c.var.user.id);
-			if (!employee.company_id)
+			if (!employee?.company_id)
 				return c.json({ error: "Not in a company" }, 401);
 
 			const convoId = Number(c.req.param("id"));

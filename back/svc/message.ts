@@ -1,7 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/db";
 import { message } from "../db/schema";
-import type { Message } from "../types";
 
 const useMessage = () => {
     return {
@@ -24,7 +23,7 @@ const useMessage = () => {
                     content,
                     company_id,
                     employee_id: null,
-                    customerId: customer_id
+                    customer_id: customer_id
                 });
             console.log(res)
             return res;
@@ -36,7 +35,7 @@ const useMessage = () => {
                     content,
                     company_id,
                     employee_id,
-                    customerId: customer_id
+                    customer_id
                 });
         }
     }

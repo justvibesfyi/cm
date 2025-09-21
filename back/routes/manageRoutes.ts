@@ -1,163 +1,91 @@
-import { zValidator } from '@hono/zod-validator';
-import { Hono } from 'hono';
-import { getCookie } from 'hono/cookie';
-import { z } from 'zod';
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
+import { z } from "zod";
+import { insertIntegrationSchema } from "../db/schema.zod";
+import { applyLinkUpdate } from "../links";
+import useIntegration from "../svc/integration";
+import type { Integration, Platform } from "../types";
+import requiresAuth from "./middleware/requiresAuth";
 
-// Middleware to check authentication
-const requireAuth = async (c: any, next: any) => {
-    const sessionId = getCookie(c, 'session');
-
-    if (!sessionId) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-
-    // TODO: Validate session with database
-    // For now, just check if session exists
-
-    await next();
-};
-
-// Source of truth
-const businessSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    icon: z.string().optional(),
-    createdAt: z.string(),
-    updatedAt: z.string()
+const integrationUpdateSchema = insertIntegrationSchema.omit({
+	company_id: true,
+	id: true
 });
-
-const integrationSchema = z.object({
-    id: z.string(),
-    businessId: z.string(),
-    platform: z.enum(['telegram', 'zalo']),
-    clientId: z.string().optional(),
-    secret: z.string()
-});
-
-// Validation schemas
-const platformSchema = integrationSchema.pick({
-    platform: true,
-})
-
-const integrationUpdateSchema = integrationSchema.pick({
-    platform: true,
-    clientId: true,
-    secret: true
-}).partial();
-
-const businessUpdateSchema = businessSchema.pick({
-    name: true,
-    description: true,
-    icon: true
-}).partial({
-    icon: true
-});
-
 
 // POST /api/manage/integrations/enable
 export const manageRoutes = new Hono()
-    .post('/integrations/enable',
-        zValidator('json', platformSchema),
-        async (c) => {
-            const { platform } = c.req.valid('json');
+	.use("*", requiresAuth)
 
-            // TODO: Enable integration in database
-            console.log(`Enabling integration for platform: ${platform}`);
+	// GET /api/manage/integrations
+	.get("/integrations", async (c) => {
 
-            return c.json({
-                message: `${platform} integration enabled successfully`,
-                platform,
-                enabled: true
-            });
-        })
+		const company_id = c.var.user.company_id;
+		if (!company_id) return c.json({ error: "You're not in a company" }, 400);
 
-    // POST /api/manage/integrations/disable
-    .post('/integrations/disable',
-        zValidator('json', platformSchema),
-        async (c) => {
-            const { platform } = c.req.valid('json');
+		const integrations: Integration[] = await useIntegration().getIntegrations(company_id);
 
-            // TODO: Disable integration in database
-            console.log(`Disabling integration for platform: ${platform}`);
+		return c.json({
+			integrations: integrations,
+		});
+	})
 
-            return c.json({
-                message: `${platform} integration disabled successfully`,
-                platform,
-                enabled: false
-            });
-        })
+	.get(
+		"/integration",
+		zValidator("json", z.object({ platform: z.string() })),
+		async (c) => {
+			const company_id = c.var.user.company_id;
 
-    // PUT /api/manage/integrations/update
-    .put('/integrations/update',
-        zValidator('json', integrationUpdateSchema),
-        async (c) => {
-            try {
-                const { platform, clientId } = c.req.valid('json');
+			if (company_id === null)
+				return c.json({ error: "You're not in a company" }, 400);
 
-                // TODO: Update integration credentials in database
-                console.log(`Updating integration for platform: ${platform}`);
+			const { platform } = c.req.valid("json");
 
-                return c.json({
-                    message: `${platform} integration updated successfully`,
-                    integration: {
-                        platform,
-                        clientId: clientId || null,
-                        secret: '***', // Don't return actual secret
-                        updatedAt: new Date().toISOString()
-                    }
-                });
+			const integration: Integration = await useIntegration().getIntegration(
+				platform as Platform,
+				company_id,
+			);
 
-            } catch (error) {
-                console.error(`Error updating integration: ${error}`);
-                return c.json({ error: 'Failed to update integration' }, 500);
-            }
-        })
+			return c.json({ integration });
+		},
+	)
 
-    // Business Management Routes
+	.put(
+		"/integration",
+		zValidator("json", integrationUpdateSchema),
+		async (c) => {
+			const company_id = c.var.user.company_id;
 
-    // PUT /api/manage/business/update
-    .put('/business/update',
-        zValidator('json', businessUpdateSchema),
-        async (c) => {
-            try {
-                const { name, description, icon } = c.req.valid('json');
+			if (company_id === null)
+				return c.json({ error: "You're not in a company" }, 400);
 
-                // TODO: Update business information in database
-                console.log('Updating business information');
+			let { platform, enabled, key_1, key_2, key_3, key_4, key_5, key_6 } = c.req.valid("json");
 
-                return c.json({
-                    message: 'Business information updated successfully',
-                    business: {
-                        name: name || null,
-                        description: description || null,
-                        icon: icon ? 'Updated' : null, // Don't return actual image data
-                        updatedAt: new Date().toISOString()
-                    }
-                });
 
-            } catch (error) {
-                console.error(`Error updating business: ${error}`);
-                return c.json({ error: 'Failed to update business information' }, 500);
-            }
-        })
+			if (platform === 'telegram') {
+				if (!key_1 && enabled) {
+					enabled = false;
+				}
+			}
+			else if (platform === 'zalo') {
+				if ((!key_1 || !key_2 || !key_3) && enabled) {
+					enabled = false;
+				}
+			}
 
-    // GET /api/manage/integrations
-    .get('/integrations', async (c) => {
-        const integrations = [
-            {
-                platform: 'telegram',
-                enabled: true,
-                hasCredentials: false,
-                lastSync: null
-            },
-            {
-                platform: 'zalo',
-                enabled: false,
-                hasCredentials: false,
-                lastSync: null
-            }
-        ];
+			const intDb = useIntegration();
+			const integration = await intDb.updateIntegration(
+				platform as Platform,
+				company_id,
+				enabled,
+				[key_1, key_2 || null, key_3 || null, key_4 || null, key_5 || null, key_6 || null]
+			);
 
-        return c.json({ integrations });
-    });
+			if (!integration) {
+				return c.json({ error: "Failed to update integration" }, 400);
+			}
+
+			await applyLinkUpdate(integration);
+
+			return c.json({ integration });
+		},
+	);

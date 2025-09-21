@@ -22,7 +22,7 @@ const useCustomer = () => {
         },
 
         ensureCustomer: async (platform: string, id: string, name: string, avatar: string | null, company_id: number) => {
-            const [result] = await db
+            const result = await db
                 .insert(customer)
                 .values({
                     platform,
@@ -40,7 +40,9 @@ const useCustomer = () => {
                 })
                 .returning({ id: customer.id });
 
-            return result.id as number;
+            console.log("Ensure customer:", result[0]?.id);
+
+            return result[0]?.id as number;
         }
     }
 };

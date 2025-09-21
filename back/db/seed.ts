@@ -87,7 +87,7 @@ export const seedDb = async () => {
 			id: 2,
 			content: "Hello, How may i help you?",
 			company_id: 1,
-			employee_id: null,
+			employee_id: "1",
 			customer_id: 1,
 			created_at: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
 		},
@@ -122,7 +122,7 @@ export const seedDb = async () => {
 		id: 1,
 		company_id: 1,
 		platform: "telegram",
-		api_key: "6754974318:AAFjhSFtScQ91ZlsY10JB8F_jIg02L75Yb0",
+		key_1: "6754974318:AAFjhSFtScQ91ZlsY10JB8F_jIg02L75Yb0",
 		enabled: true,
 	});
 

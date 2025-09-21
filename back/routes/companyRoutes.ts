@@ -21,7 +21,11 @@ export const companyRoutes = new Hono()
 		const emp = useEmployee();
 
 		// todo role check
-		const { company_id, role: _ } = await emp.getFullEmployee(c.var.user.id);
+		const employee = await emp.getFullEmployee(c.var.user.id);
+		if (!employee)
+			return c.json({ error: "Employee not found" }, 404);
+
+		const { company_id, position: _ } = employee;
 
 		if (company_id !== null)
 			return c.json({ error: "You're already in a company" }, 401);

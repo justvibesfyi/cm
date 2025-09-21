@@ -133,7 +133,8 @@ function useAuth() {
     const [result] = await db
       .select({
         id: employee.id,
-        email: employee.email
+        email: employee.email,
+        company_id: employee.company_id
       })
       .from(employee)
       .leftJoin(session, eq(employee.id, session.employee_id))
@@ -145,10 +146,7 @@ function useAuth() {
     if (!result)
       return undefined;
 
-    return result as {
-      id: string,
-      email: string,
-    };
+    return result;
   }
 
   const logoutEmployee = async (sessionId: string) => {

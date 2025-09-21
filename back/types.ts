@@ -1,41 +1,36 @@
+import type z from "zod";
+import {
+	type insertMessageSchema,
+	selectIntegrationSchema,
+} from "./db/schema.zod";
+
 export interface Employee {
-    id: string;
-    email: string;
-    onboarded: number;
-    first_name: string;
-    last_name: string;
-    avatar: string;
-    company_id: number;
-    role: string;
+	id: string;
+	email: string;
+	onboarded: number;
+	first_name: string;
+	last_name: string;
+	avatar: string;
+	company_id: number;
+	role: string;
 }
 
 export interface Company {
-    id: number;
-    name: string;
-    description: string;
-    icon: string | null;
+	id: number;
+	name: string;
+	description: string;
+	icon: string | null;
 }
 
 export interface Customer {
-    id: number;
-    name: string;
-    avatar: string;
-    platform: string;
-    customer_id: string;
+	id: number;
+	name: string;
+	avatar: string;
+	platform: string;
+	customer_id: string;
 }
+export type Message = z.infer<typeof insertMessageSchema>;
+export type Integration = z.infer<typeof selectIntegrationSchema>;
 
-export interface Message {
-    id: number;
-    content: string;
-    created_at: string;
-    employee_id: string | null;
-    customer_id: number | null;
-}
-
-export interface Integration {
-    platform: string;
-    company_id: number;
-    api_key: string;
-}
-
-export type Platform = 'zalo' | 'discord' | 'telegram' | 'whatsapp' | 'email';
+export const PlatformSchema = selectIntegrationSchema.shape.platform;
+export type Platform = z.infer<typeof PlatformSchema>;

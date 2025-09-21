@@ -10,8 +10,9 @@ if (!token) {
 
 export const createTelegramLink = (token: string, company_id: number) => {
     const bot = new TelegramBot(token, { polling: true });
+    const error: string | undefined = "";
 
-    console.log("Created a telegram bot")
+    console.log("Created a telegram bot");
 
     bot.on("message", async (msg) => {
         try {
@@ -34,16 +35,27 @@ export const createTelegramLink = (token: string, company_id: number) => {
             };
 
             const customerDb = useCustomer();
-            const id = await customerDb.ensureCustomer('telegram', msg.from.id.toString(), msg.from.username ?? msg.from.first_name, data.avatarUrl || null, company_id);
+            const id = await customerDb.ensureCustomer(
+                "telegram",
+                msg.from.id.toString(),
+                msg.from.username ?? msg.from.first_name,
+                data.avatarUrl || null,
+                company_id,
+            );
 
             const messageDb = useMessage();
-            await messageDb.saveCustomerMessage(data.text || '<unsupported message>', company_id, id);
+            await messageDb.saveCustomerMessage(
+                data.text || "<unsupported message>",
+                company_id,
+                id,
+            );
         } catch (error) {
             console.error("Error processing message:", error);
         }
     });
 
     return {
+        error,
         sendMessage: async (chat_id: string, msg: string): Promise<boolean> => {
             try {
                 await bot.sendMessage(chat_id, msg);
@@ -52,6 +64,12 @@ export const createTelegramLink = (token: string, company_id: number) => {
                 console.error("Failed sending message: ", e);
                 return false;
             }
+        },
+        stop: async () => {
+            console.log(`Stopping telegram bot for company: ${company_id}...`);
+            await bot.stopPolling();
+            await bot.logOut();
+            console.log(`Stopped telegram bot for company: ${company_id}.`);
         },
     };
 };
