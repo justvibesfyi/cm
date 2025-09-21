@@ -11,8 +11,6 @@ const settingsMap = new Map<
     }
 >();
 
-const errorCount = new Map<string, number>();
-
 const server = Bun.serve({
     port: 3102,
     routes: {
@@ -67,7 +65,6 @@ const server = Bun.serve({
 
                 if (signature !== mac) {
                     console.error("Invalid signature for app id", appId, signature, mac);
-                    errorCount;
                     return new Response("Unauthorized", { status: 401 });
                 }
                 if (
@@ -149,6 +146,8 @@ async function saveTokenData(company_id: number, data: Integration) {
 }
 
 async function refreshAccessToken(tokenData: Integration): Promise<Integration> {
+
+    
     console.log("Refreshing access token...");
 
     const params = new URLSearchParams();
@@ -265,12 +264,18 @@ const shutdown = () => {
 
 console.log(`Zalo webhook is listening on port ${server.port}`);
 
-const createZaloLink = (company_id: number) => {
+const createZaloLink = (integration: Integration) => {
     const error = undefined;
+
+    settingsMap.set(integration.key_1, {
+        company_id: integration.company_id,
+        webhook_secret: integration.key_3 || "",
+    });
+
     return {
         error,
         sendMessage: async (chat_id: string, msg: string): Promise<boolean> => {
-            const accessToken = await ensureAccessToken(company_id);
+            const accessToken = await ensureAccessToken(integration.company_id);
 
             if (!chat_id || !msg) {
                 console.error("Missing chatId or content");
@@ -318,7 +323,9 @@ const createZaloLink = (company_id: number) => {
             console.log("Message sent to Zalo successfully", response);
             return true;
         },
-        stop: async () => { },
+        stop: async (integration: Integration) => {
+            settingsMap.delete(integration.key_1)
+        },
     };
 };
 

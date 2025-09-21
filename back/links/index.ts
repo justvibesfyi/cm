@@ -1,11 +1,12 @@
 import useIntegration from "../svc/integration";
 import type { Integration } from "../types";
 import { createTelegramLink } from "./telegram";
+import createZaloLink from "./zalo";
 
 export type Link = {
     error: string | undefined,
     sendMessage: (chat_id: string, content: string) => Promise<boolean>,
-    stop: () => Promise<void>,
+    stop: (integration: Integration) => Promise<void>,
 };
 const linkMap = new Map<string, Link>();
 
@@ -18,7 +19,7 @@ export const runLink = async (integration: Integration) => {
     if (old) {
         linkMap.delete(key);
         try {
-            await old.stop();
+            await old.stop(integration);
         }
         catch (e) {
             console.error("Error stopping old telegram link:", e)
@@ -27,19 +28,33 @@ export const runLink = async (integration: Integration) => {
 
     if (integration.platform === "telegram") {
         const link = createTelegramLink(
-            integration.key_1,
-            integration.company_id,
+            integration
         );
 
         linkMap.set(key, link);
     }
+    else if (integration.platform === "zalo") {
+        const link = createZaloLink(integration);
+        linkMap.set(key, link);
+    }
 };
 
-export const applyLinkUpdate = (integration: Integration) => {
+export const applyLinkUpdate = async (integration: Integration) => {
     if (integration.enabled) {
         runLink(integration);
     } else {
-        linkMap.delete(createKey(integration));
+        console.log("Stopping ", integration.platform, "for company ", integration.company_id)
+        const key = createKey(integration)
+        const old = linkMap.get(key);
+        if (old) {
+            try {
+                await old.stop(integration);
+            }
+            catch (e) {
+                console.error("Error stopping old telegram link:", e)
+            }
+        }
+        linkMap.delete(key);
     }
 }
 

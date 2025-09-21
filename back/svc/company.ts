@@ -5,6 +5,11 @@ import useEmployee from "./employee";
 
 const useCompany = () => {
 	return {
+		getCompany: async (company_id: number) => {
+			const [result] = await db.select().from(company).where(eq(company.id, company_id));
+
+			return result;
+		},
 		createCompany: async (
 			userid: string,
 			name: string,
@@ -15,7 +20,7 @@ const useCompany = () => {
 
 			const user = await emp.getFullEmployee(userid);
 
-			if (user.company_id) return false;
+			if (!user?.company_id) return false;
 
 			const [newCompany] = await db
 				.insert(company)

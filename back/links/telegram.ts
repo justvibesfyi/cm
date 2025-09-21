@@ -1,6 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import useCustomer from "../svc/customer";
 import useMessage from "../svc/message";
+import type { Integration } from "../types";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -8,7 +9,8 @@ if (!token) {
     throw new Error("TELEGRAM_BOT_TOKEN environment variable is required");
 }
 
-export const createTelegramLink = (token: string, company_id: number) => {
+export const createTelegramLink = (integration: Integration) => {
+    const { key_1: token, company_id } = integration;
     const bot = new TelegramBot(token, { polling: true });
     const error: string | undefined = "";
 

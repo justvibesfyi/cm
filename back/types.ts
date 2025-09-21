@@ -1,6 +1,7 @@
 import type z from "zod";
 import {
 	type insertMessageSchema,
+	type selectCompanySchema,
 	selectIntegrationSchema,
 } from "./db/schema.zod";
 
@@ -15,12 +16,7 @@ export interface Employee {
 	role: string;
 }
 
-export interface Company {
-	id: number;
-	name: string;
-	description: string;
-	icon: string | null;
-}
+export type Company = z.infer<typeof selectCompanySchema>;
 
 export interface Customer {
 	id: number;
@@ -34,3 +30,4 @@ export type Integration = z.infer<typeof selectIntegrationSchema>;
 
 export const PlatformSchema = selectIntegrationSchema.shape.platform;
 export type Platform = z.infer<typeof PlatformSchema>;
+export type PlatformConst = Platform[keyof Platform];

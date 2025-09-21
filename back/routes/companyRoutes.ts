@@ -47,11 +47,7 @@ export const companyRoutes = new Hono()
 	.put("/update", zValidator("json", updateCompanySchema), async (c) => {
 		const { name, description, icon } = c.req.valid("json");
 
-		const emp = useEmployee();
-
-		// todo role check
-		const { company_id, role: _ } = await emp.getFullEmployee(c.var.user.id);
-
+		const company_id = c.var.user.company_id;
 		if (company_id === null)
 			return c.json({ error: "You're not in a company" }, 400);
 
@@ -61,17 +57,16 @@ export const companyRoutes = new Hono()
 		return c.json({ success: true });
 	})
 	.get("/my-business", async (c) => {
-		const emp = useEmployee();
 
-		const { company_id, role: _ } = await emp.getFullEmployee(c.var.user.id);
-
+		const company_id = c.var.user.company_id;
 		if (company_id === null)
 			return c.json({ error: "You're not in a company" }, 400);
 
-		const company: Company =
-			await sql`SELECT * FROM company WHERE id = ${company_id}`.then(
-				(res) => res[0],
-			);
+		const companyDb = useCompany();
+		const company = await companyDb.getCompany(company_id)
+
+		if (!company)
+			return c.json({ error: "Company not found" }, 404);
 
 		return c.json({ company });
 	});
