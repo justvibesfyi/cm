@@ -7,12 +7,12 @@ interface ManagePlatformProps {
 		id: Platform;
 		name: string;
 	};
-	enabled: boolean;
 }
 
 const ManagePlatformButton: React.FC<ManagePlatformProps> = ({ platform }) => {
-	const { selectedPlatform, enabledIntegrations } = usePlatform();
-	const isSelected = selectedPlatform === platform.id;
+	const { selectedIntegration: integration, enabledIntegrations } =
+		usePlatform();
+	const isSelected = integration?.platform === platform.id;
 	const isEnabled = enabledIntegrations.has(platform.id);
 
 	const { selectPlatform } = usePlatform();

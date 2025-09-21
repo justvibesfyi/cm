@@ -30,10 +30,14 @@ export const platformSettingsMap = {
 export type PlatformKey = keyof typeof platformSettingsMap;
 
 export const ManageSelectedPlatform = () => {
-	const { selectedPlatform, saveSelectedIntegration: saveIntegration, enabledIntegrations } = usePlatform();
+	const {
+		saveSelectedIntegration,
+		selectedIntegration: integration,
+		updateEphemeralSelectedIntegration: onUpdate,
+	} = usePlatform();
 	const [saving, setSaving] = useState(false);
 
-	if (!selectedPlatform) {
+	if (!integration) {
 		return (
 			<div className="text-center py-8 text-muted-foreground">
 				<MessageCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
@@ -42,17 +46,21 @@ export const ManageSelectedPlatform = () => {
 		);
 	}
 
-	const isEnabled = enabledIntegrations.has(selectedPlatform);
+	const isEnabled = integration.enabled;
 
-	const PlatformComponent = platformSettingsMap[selectedPlatform];
+	const PlatformComponent = platformSettingsMap[integration.platform];
 
 	if (!PlatformComponent) {
-		return <div>Unknown platform: {selectedPlatform}</div>;
+		return <div>Unknown platform: {integration.platform}</div>;
 	}
 
 	const savePlatformSettings = async () => {
 		setSaving(true);
-		await saveIntegration();
+		try {
+			await saveSelectedIntegration();
+		} finally {
+			setSaving(false);
+		}
 	};
 
 	return (
@@ -60,18 +68,30 @@ export const ManageSelectedPlatform = () => {
 			<CardHeader>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<PlatformIcon platform={selectedPlatform} className={`w-6 h-6`} />
+						<PlatformIcon
+							platform={integration.platform}
+							className={`w-6 h-6`}
+						/>
 						<div>
-							<h3 className="font-semibold text-black">{selectedPlatform}</h3>
+							<h3 className="font-semibold text-black">
+								{integration.platform}
+							</h3>
 							<p className="text-sm text-gray-500">
-								{ isEnabled ? "Connected" : "Disconnected"}
+								{isEnabled ? "Connected" : "Disconnected"}
 							</p>
 						</div>
 					</div>
 
 					<Switch
 						checked={isEnabled}
-						onCheckedChange={() => }
+						onCheckedChange={(c) => {
+							onUpdate((old) => {
+								return {
+									...old,
+									enabled: c,
+								};
+							});
+						}}
 					/>
 				</div>
 			</CardHeader>

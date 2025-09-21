@@ -6,29 +6,92 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 interface PlatformContextType {
-	selectedPlatform: Platform | null;
 	selectPlatform: (platform: Platform | null) => void;
 	enabledIntegrations: Set<Platform>;
 	saveSelectedIntegration: () => Promise<void>;
-	ephemeralSelectedIntegration: Integration | null;
+	selectedIntegration: Integration | null;
 	updateEphemeralSelectedIntegration: (
 		updater: (old: Integration) => Integration,
 	) => void;
+	integrationMetas: {
+		id: Platform;
+		name: string;
+		keys: string[];
+	}[];
 }
 
 const PlatformManagementContext = createContext<
 	PlatformContextType | undefined
 >(undefined);
 
-const getIntegrationSettings = async () => {
-	const res = await api.manage.integrations.$get();
+const integrationMetas: {
+	id: Platform;
+	name: string;
+	keys: string[];
+}[] = [
+	{
+		id: "telegram",
+		name: "Telegram",
+		keys: ["Api Key"],
+	},
+	{
+		id: "zalo",
+		name: "Zalo",
+		keys: ["App Id", "App Secret", "Webhook Secret"],
+	},
+	{
+		id: "email",
+		name: "Email",
+		keys: ["SMTP Host", "SMTP Port", "Username", "Password"],
+	},
+	{
+		id: "discord",
+		name: "Discord",
+		keys: ["Bot Token", "Client Id", "Client Secret"],
+	},
+	{
+		id: "wechat",
+		name: "WeChat",
+		keys: ["App Id", "App Secret", "Token", "Encoding AES Key"],
+	},
+	{
+		id: "whatsapp",
+		name: "WhatsApp",
+		keys: ["Phone Number Id", "Access Token", "Webhook Verify Token"],
+	},
+];
 
+const createDummyIntegration = (platform: Platform): Integration | null => {
+	return {
+		id: 0,
+		platform,
+		enabled: false,
+		company_id: 0,
+		key_1: "",
+		key_2: null,
+		key_3: null,
+		key_4: null,
+		key_5: null,
+		key_6: null,
+	};
+};
+
+const getIntegrationSettings = async (selectedPlatform: Platform) => {
+	const res = await api.manage.integration.$get({
+		query: {
+			platform: selectedPlatform
+		}
+	})
 	if (!res.ok) {
 		console.error("Failed to fetch integration settings");
+		const error = await res.json();
+		console.error(error);
 		return null;
 	}
 
-	return (await res.json()).integrations;
+	const data = await res.json();
+	console.log(data);
+	return data.integration;
 };
 
 const saveIntegrationSettings = async (integration: Integration) => {
@@ -49,13 +112,12 @@ export const PlatformManagementProvider = ({
 }: {
 	children: React.ReactNode;
 }) => {
+	const [selectedIntegration, setSelectedIntegration] =
+		useState<Integration | null>(null);
+
 	const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(
 		null,
 	);
-
-	const [ephemeralSelectedIntegration, setEphemeralSelectedIntegration] =
-		useState<Integration | null>(null);
-
 	const [integrations, setIntegrations] = useState<Integration[]>([]);
 
 	const [enabledIntegrations, setEnabledIntegrations] = useState<Set<Platform>>(
@@ -63,31 +125,33 @@ export const PlatformManagementProvider = ({
 	);
 
 	useEffect(() => {
-		setEphemeralSelectedIntegration(
-			integrations.find((i) => i.platform === selectedPlatform) ?? null,
-		);
-	}, [selectedPlatform, integrations]);
+		if (!selectedPlatform) {
+			setSelectedIntegration(null);
+			return;
+		}
 
-	useEffect(() => {
-		getIntegrationSettings().then((integs) => {
-			if (!integs) return;
+		getIntegrationSettings(selectedPlatform).then((integration) => {
+			if (!integration) {
+				setSelectedIntegration(createDummyIntegration(selectedPlatform));
+				return;
+			}
 
-			setIntegrations(integs);
-			setEnabledIntegrations(
-				new Set(integs.filter((i) => i.enabled).map((i) => i.platform)),
-			);
+			setSelectedIntegration(integration);
 		});
-	}, []);
+	}, [selectedPlatform]);
 
 	const selectPlatform = (platform: Platform | null) => {
+		if (!platform) {
+			setSelectedPlatform(null);
+			return;
+		}
+
 		setSelectedPlatform((prev) => (prev === platform ? null : platform));
 	};
 
 	const saveSelectedIntegration = async () => {
-		if (!ephemeralSelectedIntegration) return;
-		const integration = await saveIntegrationSettings(
-			ephemeralSelectedIntegration,
-		);
+		if (!selectedIntegration) return;
+		const integration = await saveIntegrationSettings(selectedIntegration);
 
 		if (!integration) return;
 
@@ -105,19 +169,18 @@ export const PlatformManagementProvider = ({
 	const updateEphemeralSelectedIntegration = (
 		updater: (old: Integration) => Integration,
 	) => {
-		if (ephemeralSelectedIntegration)
-			setEphemeralSelectedIntegration(updater(ephemeralSelectedIntegration));
+		setSelectedIntegration((prev) => (prev ? updater(prev) : null));
 	};
 
 	return (
 		<PlatformManagementContext.Provider
 			value={{
-				selectedPlatform,
 				selectPlatform,
 				enabledIntegrations,
 				saveSelectedIntegration,
-				ephemeralSelectedIntegration,
+				selectedIntegration,
 				updateEphemeralSelectedIntegration,
+				integrationMetas,
 			}}
 		>
 			{children}

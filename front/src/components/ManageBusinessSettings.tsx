@@ -3,6 +3,7 @@ import { Building2, Save, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button } from "./ui/button";
+import { Label } from "./ui/label";
 
 const getCompany = async () => {
 	const res = await api.company["my-business"].$get();
@@ -66,9 +67,9 @@ export default function ManageBusinessSettings() {
 
 				<div className="space-y-4">
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<Label className="block text-sm font-medium text-gray-700 mb-2">
 							Business Name
-						</label>
+						</Label>
 						<input
 							type="text"
 							value={businessInfo.name}
@@ -80,9 +81,9 @@ export default function ManageBusinessSettings() {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<Label className="block text-sm font-medium text-gray-700 mb-2">
 							Business Icon
-						</label>
+						</Label>
 						<div className="flex items-center gap-4">
 							<div className="w-16 h-16 border border-dashed border-zinc-800 rounded-lg flex items-center justify-center">
 								{businessInfo.icon ? (
@@ -102,11 +103,11 @@ export default function ManageBusinessSettings() {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<Label className="block text-sm font-medium text-gray-700 mb-2">
 							Business Description
-						</label>
+						</Label>
 						<textarea
-							value={businessInfo.description}
+							value={businessInfo.description || ""}
 							onChange={(e) =>
 								setBusinessInfo({
 									...businessInfo,

@@ -1,6 +1,5 @@
 import { ManageKeyInput } from "./ManageKeyInput";
 
-// platforms/TelegramSettings.tsx
 export const ManageTelegram = () => {
-	return <ManageKeyInput keyName="Api Key" keyValue="" />;
+	return <ManageKeyInput keyName="API Key" keyField="key_1" />;
 };

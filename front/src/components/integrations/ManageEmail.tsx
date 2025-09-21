@@ -3,11 +3,11 @@ import { ManageKeyInput } from "./ManageKeyInput";
 export const ManageEmail = () => {
 	return (
 		<div className="flex flex-col gap-2">
-			<ManageKeyInput keyName="Domain" keyValue="" />
+			<ManageKeyInput keyName="Domain" keyField="key_1" />
 
-			<ManageKeyInput keyName="Username" keyValue="" />
+			<ManageKeyInput keyName="Username" keyField="key_2" />
 
-			<ManageKeyInput keyName="Password" keyValue="" />
+			<ManageKeyInput keyName="Password" keyField="key_3" />
 		</div>
 	);
 };
