@@ -1,16 +1,17 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
-import { seedDb } from "./db/seed";
 import { runEnabledLinks } from "./links";
+import { generateCodeChallenge } from "./links/zalo";
 import { authRoutes } from "./routes/authRoutes";
 import { chatRoutes } from "./routes/chatRoutes";
 import { companyRoutes } from "./routes/companyRoutes";
 import { employeeRoutes } from "./routes/employeeRoutes";
 import { manageRoutes } from "./routes/manageRoutes";
+import { uploadRoutes } from "./routes/uploadRoutes";
 
 // Initialize database
 try {
-	await seedDb();
+	// await seedDb();
 	await runEnabledLinks();
 	console.info("Database initialized successfully");
 } catch (error) {
@@ -26,11 +27,17 @@ const apiRoutes = app
 	.route("/auth", authRoutes)
 	.route("/employee", employeeRoutes)
 	.route("/company", companyRoutes)
-	.route("/chat", chatRoutes);
+	.route("/chat", chatRoutes)
+	.route("/upload", uploadRoutes);
 
 app
+	.get("/uploads/*", serveStatic({ root: "./uploads", rewriteRequestPath: (path) => path.replace(/^\/uploads/, "") }))
 	.get("*", serveStatic({ root: "./front/dist" }))
 	.get("*", serveStatic({ path: "./front/dist/index.html" }));
+
+console.log(
+	generateCodeChallenge("1234567890123456789012345678901234567890123"),
+);
 
 export default app;
 

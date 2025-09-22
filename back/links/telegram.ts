@@ -70,7 +70,6 @@ export const createTelegramLink = (integration: Integration) => {
         stop: async () => {
             console.log(`Stopping telegram bot for company: ${company_id}...`);
             await bot.stopPolling();
-            await bot.logOut();
             console.log(`Stopped telegram bot for company: ${company_id}.`);
         },
     };

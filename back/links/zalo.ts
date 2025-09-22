@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/db";
-import { integration } from "../db/schema";
+import { integration, message } from "../db/schema";
+import useCustomer from "../svc/customer";
 import type { Integration } from "../types";
 
 const settingsMap = new Map<
@@ -11,9 +12,105 @@ const settingsMap = new Map<
     }
 >();
 
+// PKCE code verifier storage map
+const codeVerifierMap = new Map<string, string>();
+
+// Generate PKCE code verifier and code challenge
+function generateCodeVerifier(): string {
+    const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < 43; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+export function generateCodeChallenge(codeVerifier: string): string {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    const hash = new Bun.CryptoHasher("sha256").update(data).digest();
+    return btoa(String.fromCharCode(...new Uint8Array(hash)))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+}
+
+function createPKCEPair(state: string): {
+    codeVerifier: string;
+    codeChallenge: string;
+} {
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = generateCodeChallenge(codeVerifier);
+
+    // Store code verifier with state as key
+    codeVerifierMap.set(state, codeVerifier);
+
+    return { codeVerifier, codeChallenge };
+}
+
 const server = Bun.serve({
     port: 3102,
     routes: {
+        "/callback": {
+            async GET(req: Request) {
+                const url = new URL(req.url);
+                const code = url.searchParams.get("code");
+                const state = url.searchParams.get("state");
+
+                if (!code || !state) {
+                    return new Response("Missing code or state parameter", {
+                        status: 400,
+                    });
+                }
+
+                // // Retrieve the code verifier using the state
+                // const codeVerifier = codeVerifierMap.get(state);
+                // if (!codeVerifier) {
+                //     return new Response("Invalid state parameter", { status: 400 });
+                // }
+
+                // Clean up the code verifier from memory
+                // codeVerifierMap.delete(state);
+
+                try {
+                    const params = new URLSearchParams();
+                    params.append("code", code);
+                    params.append("app_id", "4029030241979547278");
+                    params.append("grant_type", "authorization_code");
+                    params.append(
+                        "code_verifier",
+                        "1234567890123456789012345678901234567890123",
+                    );
+
+                    const response = await fetch(
+                        "https://oauth.zaloapp.com/v4/oa/access_token",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded",
+                                secret_key: "U8vMRqr1PYLpH8T3WBF3",
+                            },
+                            body: params,
+                        },
+                    );
+
+                    if (!response.ok) {
+                        const error = await response.text();
+                        console.error("Token exchange failed:", error);
+                        return new Response("Token exchange failed", { status: 500 });
+                    }
+
+                    const tokenData = await response.json();
+                    console.log("Token exchange successful:", tokenData);
+
+                    return new Response("Authorization successful", { status: 200 });
+                } catch (error) {
+                    console.error("Error during token exchange:", error);
+                    return new Response("Internal server error", { status: 500 });
+                }
+            },
+        },
         "/zalo-webhook": {
             async POST(req: Request) {
                 console.log("Zalo webhook received");
@@ -88,11 +185,23 @@ const server = Bun.serve({
                 console.log(userProfile);
 
                 console.log("Forwarding to server", data);
-                // await fetch(new URL('/msg/zalo', process.env.SERVER_URL), {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json' },
-                //     body: JSON.stringify(data)
-                // });
+
+                // Insert message into database
+                try {
+                    const cdb = await useCustomer();
+
+                    const id = await cdb.ensureCustomer("zalo", data.sender.id, data.info.display_name, data.info.avatar, companySettings.company_id);
+
+                    await db.insert(message).values({
+                        customer_id: id,
+                        content: data.message.text,
+                        company_id: companySettings.company_id,
+                        employee_id: null,
+                    });
+                } catch (error) {
+                    console.error("Failed to insert message:", error);
+                }
+
                 return new Response("OK", { status: 200 });
             },
         },
@@ -145,9 +254,9 @@ async function saveTokenData(company_id: number, data: Integration) {
     }
 }
 
-async function refreshAccessToken(tokenData: Integration): Promise<Integration> {
-
-    
+async function refreshAccessToken(
+    tokenData: Integration,
+): Promise<Integration> {
     console.log("Refreshing access token...");
 
     const params = new URLSearchParams();
@@ -156,20 +265,26 @@ async function refreshAccessToken(tokenData: Integration): Promise<Integration> 
     params.append("refresh_token", tokenData.key_5 || "");
     params.append("grant_type", "refresh_token");
 
-    const response = await fetch("https://oauth.zaloapp.com/v4/oa/access_token", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: params,
-    });
+    // const response = await fetch("https://oauth.zaloapp.com/v4/oa/access_token", {
+    //     method: "POST",
+    //     headers: {
+    //         "Content-Type": "application/x-www-form-urlencoded",
+    //     },
+    //     body: params,
+    // });
 
-    if (!response.ok) {
-        const error = await response.text().catch(() => "Unknown error");
-        throw new Error(`Failed to refresh token: ${error}`);
-    }
+    // if (!response.ok) {
+    //     const error = await response.text().catch(() => "Unknown error");
+    //     throw new Error(`Failed to refresh token: ${error}`);
+    // }
 
-    const data = (await response.json()) as {
+    const data = {
+        access_token:
+            "Z032PU3rytEE2yPdwV3-TuCBpMNbwRyMychN0TlGln3fICbDzRFv4iWQl7FRizaGzmQkKz-ioW7gJRWNyUFJV-L2fZ-MvUH_XH2n89wQqdsr4RukqgxJVky8go_xiVD1oXEV3AE0pMkATOeccjZHQ90XfdIlXVqvdZ6DSvg9rMEM2eqnguk-B8OmxbshZu8-lHRl8eAlWqBhAEehvvs1ViuxvJEzaBTJiXE37eYNwccWCfCbcCxhQvzBZ2somVr2WpMZ7ekNcaENRjGAlO-A7uO0-sNljQ1j-owGASsLu6hCC8eEofw-GAOOsrUNjea-_YByUEg-cJY09CT-kgdpDhKVtoNSjeru-1BB7E-K-6po398Hc8RW394WarshhSOSnYEXSFU5yJFnUhDt-_Fb8z1Lkpz7SLxC0INculTm",
+        refresh_token:
+            "w6P80Bw96WVgRKm2jumN0-TjHm2xbNzRYpfhDfQdPpA_Cq0pYgqJOwGe93A4XXD7YYeuDeEC8aot3IWljkqmAvTfO6svyJ1hanGQ2SwEB0IJ01uTXUCVPQrg2I6Pn1uYpqK_8i_O6INfQajcml5w0inUJ4_uoLjFo5LQCyBSI53pLM4fyDb2A-1WPdVgnqqftI0RTCp42t3ZNZCTyUOb6EP6SMJjtIiPlq9uHO_-Np2AIsayrkjnNznqQYByqsjRgrKvM_ZQQL-lG4y0hV5zPVnL9pZvnJDZh7Kb9lptFcBl31CTnQD67-as7KRAf11Azn522CUjSLBmEMer_RPXOAa6KcUOiLeYhGuCTwI8LoIDDNv1Zz0bCf4q8NovfI0cf1S59vMPAbgZFnSbbBat9AOu04Tarc8qk9uU10",
+        expires_in: "90000",
+    } as {
         access_token: string;
         refresh_token: string;
         expires_in: string; // in seconds
@@ -204,7 +319,8 @@ async function ensureAccessToken(company_id: number): Promise<string> {
 
         // Check if token is expired or about to expire (within buffer time)
         const isExpired =
-            !tokenData || Date.now() >= Number(tokenData.key_6) - TOKEN_EXPIRY_BUFFER_MS;
+            !tokenData ||
+            Date.now() >= Number(tokenData.key_6) - TOKEN_EXPIRY_BUFFER_MS;
 
         if (isExpired) {
             console.log("Token expired or about to expire, refreshing...");
@@ -215,7 +331,7 @@ async function ensureAccessToken(company_id: number): Promise<string> {
             console.log("Using existing valid token");
         }
 
-        return tokenData.key_4 || '';
+        return tokenData.key_4 || "";
     } catch (error) {
         console.error("Error ensuring access token:", error);
         throw new Error("Failed to obtain valid access token");
@@ -324,7 +440,7 @@ const createZaloLink = (integration: Integration) => {
             return true;
         },
         stop: async (integration: Integration) => {
-            settingsMap.delete(integration.key_1)
+            settingsMap.delete(integration.key_1);
         },
     };
 };

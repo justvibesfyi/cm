@@ -27,6 +27,7 @@ export const companyRoutes = new Hono()
 
 		const { company_id, position: _ } = employee;
 
+		console.log(company_id)
 		if (company_id !== null)
 			return c.json({ error: "You're already in a company" }, 401);
 
@@ -40,9 +41,9 @@ export const companyRoutes = new Hono()
 		);
 
 		if (!new_company_id)
-			return c.json({ error: "You're already in a company" }, 400);
+			return c.json({ error: "Unable to create a company" }, 400);
 
-		return c.json({ success: true, company_id });
+		return c.json({ success: true, new_company_id });
 	})
 	.put("/update", zValidator("json", updateCompanySchema), async (c) => {
 		const { name, description, icon } = c.req.valid("json");

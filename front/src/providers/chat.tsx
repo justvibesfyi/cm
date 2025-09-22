@@ -43,6 +43,8 @@ const getMessages = async (convoId: number) => {
 	}
 
 	const { msgs } = await res.json();
+
+	console.log("Raw msgs: ", msgs);
 	return msgs;
 };
 
@@ -65,9 +67,9 @@ export default function ChatProvider({
 	const [messages, setMessages] = useState([] as Message[]);
 	const [selectedConvo, setSelectedConvo] = useState<Customer | null>(null);
 
-	const selectConvo = useCallback((contact: Customer | null) => {
+	const selectConvo = (contact: Customer | null) => {
 		setSelectedConvo((prev) => (prev?.id === contact?.id ? null : contact));
-	}, []);
+	};
 
 	const handleSendMessage = useCallback(
 		async (content: string, convo_id: number) => {
@@ -122,9 +124,6 @@ export default function ChatProvider({
 			}
 		};
 	}, []);
-
-	// start socket connection
-	useEffect(() => {}, []);
 
 	return (
 		<ChatContext.Provider
