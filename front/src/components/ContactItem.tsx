@@ -1,6 +1,7 @@
+import type { Contact } from "@back/types";
 import type React from "react";
-import type { Contact } from "../types";
 import PlatformIcon from "./PlatformIcon";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 interface ContactItemProps {
 	contact: Contact;
@@ -23,14 +24,12 @@ const ContactItem: React.FC<ContactItemProps> = ({
 		>
 			{/* Avatar */}
 			<div className="relative flex-shrink-0 mr-3">
-				<img
-					src={contact.avatar}
-					alt={contact.name}
-					className="w-12 h-12 rounded-full object-cover"
-				/>
-				{contact.isOnline && (
-					<div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-				)}
+				<Avatar>
+					<AvatarImage src={contact.avatar} />
+					<AvatarFallback>
+						{contact.name.slice(0, 2)}
+					</AvatarFallback>
+				</Avatar>
 			</div>
 
 			{/* Contact Info */}

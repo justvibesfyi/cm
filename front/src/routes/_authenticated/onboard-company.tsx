@@ -7,11 +7,11 @@ import {
 	Upload,
 	Users,
 } from "lucide-react";
-import type React from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { handleFileUpload } from "@/lib/utils";
 import { useAuth } from "@/providers/auth";
 
 interface BusinessData {
@@ -116,18 +116,6 @@ function CompanyOnboardingPage() {
 			...prev,
 			[currentBusinessStep.key]: value,
 		}));
-	};
-
-	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const result = e.target?.result as string;
-				handleBusinessInputChange(result);
-			};
-			reader.readAsDataURL(file);
-		}
 	};
 
 	const canProceedBusiness = () => {
@@ -260,7 +248,11 @@ function CompanyOnboardingPage() {
 								<input
 									type="file"
 									accept="image/*"
-									onChange={handleFileUpload}
+									onChange={async (e) => {
+										const url = await handleFileUpload(e);
+										if (!url) return;
+										handleBusinessInputChange(url);
+									}}
 									className="hidden"
 								/>
 							</label>

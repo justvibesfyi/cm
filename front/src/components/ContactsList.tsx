@@ -1,5 +1,3 @@
-import type React from "react";
-import { useEffect } from "react";
 import { useChat } from "@/providers/chat";
 import ContactItem from "./ContactItem";
 

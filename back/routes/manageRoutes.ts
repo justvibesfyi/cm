@@ -7,7 +7,7 @@ import {
 } from "../db/schema.zod";
 import { applyLinkUpdate } from "../links";
 import useIntegration from "../svc/integration";
-import { type Integration, type Platform, PlatformSchema } from "../types";
+import type { Integration, Platform } from "../types";
 import requiresAuth from "./middleware/requiresAuth";
 
 const integrationUpdateSchema = insertIntegrationSchema.omit({
@@ -61,7 +61,7 @@ export const manageRoutes = new Hono()
 				}
 			}
 
-			console.log(platform, enabled, key_1, key_2, key_3)
+			console.log(platform, enabled, key_1, key_2, key_3);
 
 			const intDb = useIntegration();
 			const integration = await intDb.updateIntegration(
@@ -78,7 +78,7 @@ export const manageRoutes = new Hono()
 				],
 			);
 
-			console.log(integration)
+			console.log(integration);
 
 			if (!integration) {
 				return c.json({ error: "Failed to update integration" }, 400);

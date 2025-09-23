@@ -4,6 +4,7 @@ import type React from "react";
 import { useRef, useState } from "react";
 import { useChat } from "@/providers/chat";
 import MessageList from "./MessageList";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
 interface ChatWindowProps {
@@ -30,11 +31,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact }) => {
 			{/* Chat Header - Hidden on mobile (shown in App.tsx) */}
 			<div className="hidden md:flex items-center justify-between p-2 border-b border-gray-200 bg-white">
 				<div className="flex items-center">
-					<img
-						src={contact.avatar}
-						alt={contact.name}
-						className="w-10 h-10 rounded-full mr-3"
-					/>
+					<Avatar className="mr-3">
+						<AvatarImage src={contact.avatar} />
+						<AvatarFallback>{contact.name.slice(0, 2)}</AvatarFallback>
+					</Avatar>
 					<div>
 						<h2 className="font-semibold text-gray-900">{contact.name}</h2>
 						<p className="text-sm text-gray-500">

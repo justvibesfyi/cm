@@ -1,10 +1,10 @@
 - [x] platform icons
-
+- Image Uploads
 - avatar missing fallback
+
 - Client Error page
 - Employee Roles
 - Invites
-- Image Uploads
 - Integrations
     - Tg
     - Zalo

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { handleFileUpload } from "@/lib/utils";
 import { useAuth } from "@/providers/auth";
 
 interface OnboardingData {
@@ -112,18 +113,6 @@ function OnboardingEmployee() {
 		}));
 	};
 
-	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const result = e.target?.result as string;
-				handleInputChange(result);
-			};
-			reader.readAsDataURL(file);
-		}
-	};
-
 	const canProceed = () => {
 		const currentValue = data[currentStepData.key];
 		if (currentStepData.type === "file") {
@@ -172,7 +161,11 @@ function OnboardingEmployee() {
 								<input
 									type="file"
 									accept="image/*"
-									onChange={handleFileUpload}
+									onChange={async (e) => {
+										const url = await handleFileUpload(e);
+										if (!url) return;
+										handleInputChange(url);
+									}}
 									className="hidden"
 								/>
 							</label>

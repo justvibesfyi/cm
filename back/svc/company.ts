@@ -37,7 +37,7 @@ const useCompany = () => {
 			company_id: number,
 			name: string,
 			description: string | null,
-			icon: string,
+			icon: string | null,
 		) => {
 			const result = await db
 				.update(company)

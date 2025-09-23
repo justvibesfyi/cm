@@ -1,49 +1,25 @@
-import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { zValidator } from "@hono/zod-validator";
+import { randomUUIDv7 } from "bun";
 import { type Context, Hono } from "hono";
+import z from "zod";
 import requiresAuth from "./middleware/requiresAuth";
 
 const UPLOAD_DIR = path.resolve(process.cwd(), "uploads");
-
-// Validation constants
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_IMAGE_TYPES = [
-	"image/jpeg",
-	"image/jpg",
-	"image/png",
-	"image/webp",
-];
 
 // Upload configuration
 const UPLOAD_CONFIGS = {
 	"user-profile": {
 		directory: "user-profiles",
-		errorMessage: "Failed to upload profile image",
 	},
 	"business-profile": {
 		directory: "business-profiles",
-		errorMessage: "Failed to upload business profile image",
 	},
 } as const;
 
 type UploadType = keyof typeof UPLOAD_CONFIGS;
-
-const validateImageFile = (file: File) => {
-	if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-		return {
-			valid: false,
-			error: "Only JPEG, PNG, and WebP images are allowed",
-		};
-	}
-
-	if (file.size > MAX_FILE_SIZE) {
-		return { valid: false, error: "File size must be less than 5MB" };
-	}
-
-	return { valid: true };
-};
 
 const ensureDirectoryExists = async (dir: string) => {
 	if (!existsSync(dir)) {
@@ -53,7 +29,7 @@ const ensureDirectoryExists = async (dir: string) => {
 
 const generateUniqueFilename = (originalName: string) => {
 	const ext = path.extname(originalName);
-	const uuid = randomUUID();
+	const uuid = randomUUIDv7();
 	return `${uuid}${ext}`;
 };
 
@@ -67,21 +43,10 @@ const handleImageUpload = async (
 			};
 		};
 	}>,
+	file: File,
 	uploadType: UploadType,
 ) => {
 	try {
-		const formData = await c.req.formData();
-		const file = formData.get("file") as File | null;
-
-		if (!file) {
-			return c.json({ success: false, error: "No file provided" }, 400);
-		}
-
-		const validation = validateImageFile(file);
-		if (!validation.valid) {
-			return c.json({ success: false, error: validation.error }, 400);
-		}
-
 		const config = UPLOAD_CONFIGS[uploadType];
 		const uploadDir = path.resolve(UPLOAD_DIR, config.directory);
 
@@ -93,27 +58,51 @@ const handleImageUpload = async (
 
 		await writeFile(filePath, buffer);
 
-		return c.json({
-			success: true,
-			filename,
-			url: `/uploads/${config.directory}/${filename}`,
-			size: file.size,
-			type: file.type,
-		});
+		return c.json(
+			{
+				filename,
+				url: `/uploads/${config.directory}/${filename}`,
+				size: file.size,
+				type: file.type,
+			}, 200
+		);
 	} catch (error) {
-		const config = UPLOAD_CONFIGS[uploadType];
 		console.error(`${uploadType} upload error:`, error);
 		return c.json(
 			{
 				success: false,
-				error: config.errorMessage,
+				error: "Failed to upload the image",
 			},
 			500,
 		);
 	}
 };
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = [
+	"image/jpeg",
+	"image/jpg",
+	"image/png",
+	"image/webp",
+];
+
+const imageUploadSchema = z.object({
+	image: z
+		.file()
+		.refine((file) => file?.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+		.refine(
+			(file) => ALLOWED_IMAGE_TYPES.includes(file?.type),
+			"Only .jpg, .jpeg, .png and .webp formats are supported.",
+		),
+});
+
 export const uploadRoutes = new Hono()
 	.use("*", requiresAuth)
-	.post("/user-profile", (c) => handleImageUpload(c, "user-profile"))
-	.post("/business-profile", (c) => handleImageUpload(c, "business-profile"));
+	.post("/user-profile", zValidator("form", imageUploadSchema), (c) => {
+		const { image } = c.req.valid("form");
+		return handleImageUpload(c, image, "user-profile");
+	})
+	.post("/business-profile", zValidator("form", imageUploadSchema), (c) => {
+		const { image } = c.req.valid("form");
+		return handleImageUpload(c, image, "business-profile");
+	});

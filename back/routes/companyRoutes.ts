@@ -52,6 +52,8 @@ export const companyRoutes = new Hono()
 		if (company_id === null)
 			return c.json({ error: "You're not in a company" }, 400);
 
+		console.log(icon)
+
 		const comp = useCompany();
 		await comp.updateCompany(company_id, name, description, icon);
 

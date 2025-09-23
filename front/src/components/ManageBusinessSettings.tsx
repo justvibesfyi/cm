@@ -2,7 +2,9 @@ import type { Company } from "@back/types";
 import { Building2, Save, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { handleFileUpload } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 const getCompany = async () => {
@@ -20,7 +22,7 @@ export default function ManageBusinessSettings() {
 	const [businessInfo, setBusinessInfo] = useState({
 		name: "...",
 		description: "...",
-		icon: "",
+		icon: null,
 	} as Company);
 
 	const [saving, setSaving] = useState(false);
@@ -36,11 +38,12 @@ export default function ManageBusinessSettings() {
 	const updateCompanyInfo = async () => {
 		setSaving(true);
 		try {
+			console.log(businessInfo)
 			const res = await api.company.update.$put({
 				json: {
 					name: businessInfo.name,
-					icon: businessInfo.icon,
 					description: businessInfo.description,
+					icon: businessInfo.icon,
 				},
 			});
 
@@ -96,9 +99,25 @@ export default function ManageBusinessSettings() {
 									<Upload className="w-6 h-6 text-gray-400" />
 								)}
 							</div>
-							<Button className="px-4 py-2 border border-zinc-800 rounded-lg hover:bg-gray-50 transition-colors">
-								Upload Icon
-							</Button>
+
+							<label className="cursor-pointer bg-zinc-100 hover:bg-zinc-200 px-6 py-3 transition-colors flex items-center gap-2">
+								<Upload className="w-5 h-5" />
+								<span>Choose Image</span>
+								<input
+									type="file"
+									accept="image/*"
+									onChange={async (e) => {
+										const url = await handleFileUpload(e);
+										console.log(url)
+										if (!url) return;
+										setBusinessInfo((prev) => ({
+											...prev,
+											icon: url,
+										}));
+									}}
+									className="hidden"
+								/>
+							</label>
 						</div>
 					</div>
 
