@@ -1,6 +1,6 @@
 - [x] platform icons
-- Image Uploads
-- avatar missing fallback
+- [x] Image Uploads
+- [x] avatar missing fallback
 
 - Client Error page
 - Employee Roles

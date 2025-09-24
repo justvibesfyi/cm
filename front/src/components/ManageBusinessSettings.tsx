@@ -1,8 +1,10 @@
 import type { Company } from "@back/types";
+import { Avatar } from "@radix-ui/react-avatar";
 import { Building2, Save, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { handleFileUpload } from "@/lib/utils";
+import { AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -38,7 +40,7 @@ export default function ManageBusinessSettings() {
 	const updateCompanyInfo = async () => {
 		setSaving(true);
 		try {
-			console.log(businessInfo)
+			console.log(businessInfo);
 			const res = await api.company.update.$put({
 				json: {
 					name: businessInfo.name,
@@ -88,13 +90,11 @@ export default function ManageBusinessSettings() {
 							Business Icon
 						</Label>
 						<div className="flex items-center gap-4">
-							<div className="w-16 h-16 border border-dashed border-zinc-800 rounded-lg flex items-center justify-center">
+							<div className="w-16 h-16 border border-dashed border-zinc-800 rounded-full flex items-center justify-center">
 								{businessInfo.icon ? (
-									<img
-										src={businessInfo.icon}
-										alt="Business icon"
-										className="w-12 h-12 rounded"
-									/>
+									<Avatar className="">
+										<AvatarImage className="w-16 h-16 rounded-full" src={businessInfo.icon}></AvatarImage>
+									</Avatar>
 								) : (
 									<Upload className="w-6 h-6 text-gray-400" />
 								)}
@@ -108,7 +108,7 @@ export default function ManageBusinessSettings() {
 									accept="image/*"
 									onChange={async (e) => {
 										const url = await handleFileUpload(e);
-										console.log(url)
+										console.log(url);
 										if (!url) return;
 										setBusinessInfo((prev) => ({
 											...prev,

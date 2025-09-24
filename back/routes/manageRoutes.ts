@@ -39,6 +39,20 @@ export const manageRoutes = new Hono()
 		},
 	)
 
+	.get(
+		"/enabled-integrations",
+		async (c) => {
+			const company_id = c.var.user.company_id;
+
+			if (company_id === null)
+				return c.json({ error: "You're not in a company" }, 400);
+
+			const integrations = await useIntegration().getIntegrations(company_id);
+
+			return c.json({ integrations: integrations.filter(x => x.enabled).map(x => x.platform as Platform) });
+		},
+	)
+
 	.put(
 		"/integration",
 		zValidator("json", integrationUpdateSchema),

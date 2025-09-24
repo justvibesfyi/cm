@@ -24,26 +24,38 @@ const PlatformManagementContext = createContext<
 	PlatformContextType | undefined
 >(undefined);
 
-const integrationMetas: {
+
+export type PlatformMeta = {
 	id: Platform;
 	name: string;
 	keys: string[];
-}[] = [
+	implemented?: boolean;
+};
+
+const integrationMetas: PlatformMeta[] = [
 	{
 		id: "telegram",
 		name: "Telegram",
 		keys: ["Api Key"],
+		implemented: true,
 	},
 	{
 		id: "zalo",
 		name: "Zalo",
 		keys: ["App Id", "App Secret", "Webhook Secret"],
+		implemented: true,
 	},
 	{
-		id: "email",
-		name: "Email",
-		keys: ["SMTP Host", "SMTP Port", "Username", "Password"],
+		id: "chatmesh",
+		name: "Chat Mesh",
+		keys: ["Api Key"],
+		implemented: true,
 	},
+	// {
+	// 	id: "email",
+	// 	name: "Email",
+	// 	keys: ["SMTP Host", "SMTP Port", "Username", "Password"],
+	// },
 	{
 		id: "discord",
 		name: "Discord",
@@ -79,9 +91,9 @@ const createDummyIntegration = (platform: Platform): Integration | null => {
 const getIntegrationSettings = async (selectedPlatform: Platform) => {
 	const res = await api.manage.integration.$get({
 		query: {
-			platform: selectedPlatform
-		}
-	})
+			platform: selectedPlatform,
+		},
+	});
 	if (!res.ok) {
 		console.error("Failed to fetch integration settings");
 		const error = await res.json();
@@ -107,6 +119,18 @@ const saveIntegrationSettings = async (integration: Integration) => {
 	return (await res.json()).integration;
 };
 
+const getEnabledIntegrations = async (): Promise<Set<Platform>> => {
+	const res = await api.manage["enabled-integrations"].$get();
+
+	if (!res.ok) {
+		console.error("Failed to fetch enabled integrations");
+		return new Set();
+	}
+
+	const data = await res.json();
+	return new Set(data.integrations);
+};
+
 export const PlatformManagementProvider = ({
 	children,
 }: {
@@ -118,11 +142,16 @@ export const PlatformManagementProvider = ({
 	const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(
 		null,
 	);
-	const [integrations, setIntegrations] = useState<Integration[]>([]);
 
 	const [enabledIntegrations, setEnabledIntegrations] = useState<Set<Platform>>(
 		new Set(),
 	);
+
+	useEffect(() => {
+		getEnabledIntegrations().then((enabledIntegrations) => {
+			setEnabledIntegrations(enabledIntegrations);
+		});
+	}, []);
 
 	useEffect(() => {
 		if (!selectedPlatform) {
@@ -154,16 +183,9 @@ export const PlatformManagementProvider = ({
 		const integration = await saveIntegrationSettings(selectedIntegration);
 
 		if (!integration) return;
-
-		const index = integrations.findIndex(
-			(i) => i.platform === integration.platform,
-		);
-
-		if (index === -1) return;
-
-		const newIntegrations = [...integrations];
-		newIntegrations[index] = integration;
-		setIntegrations(newIntegrations);
+		getEnabledIntegrations().then((enabledIntegrations) => {
+			setEnabledIntegrations(enabledIntegrations);
+		});
 	};
 
 	const updateEphemeralSelectedIntegration = (

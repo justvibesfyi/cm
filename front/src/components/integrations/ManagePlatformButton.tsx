@@ -1,12 +1,11 @@
-import type { Platform } from "@back/types";
-import { usePlatform } from "@/context/platform-management-context";
+import {
+	type PlatformMeta,
+	usePlatform,
+} from "@/context/platform-management-context";
 import PlatformIcon from "../PlatformIcon";
 
 interface ManagePlatformProps {
-	platform: {
-		id: Platform;
-		name: string;
-	};
+	platform: PlatformMeta;
 }
 
 const ManagePlatformButton: React.FC<ManagePlatformProps> = ({ platform }) => {
@@ -19,11 +18,14 @@ const ManagePlatformButton: React.FC<ManagePlatformProps> = ({ platform }) => {
 
 	return (
 		<button
+			disabled={!platform.implemented}
 			key="telegram"
 			type="button"
 			className={`relative p-4 h-auto flex-col gap-2 w-full flex items-center cursor-pointer ${
 				isSelected ? "border-2 border-blue-400" : "border"
+			} ${platform.implemented ? "" : "opacity-50 cursor-not-allowed"}
 			}`}
+			onMouseDown={() => {}}
 			onKeyDown={() => {}}
 			onClick={() => selectPlatform(platform.id)}
 		>
