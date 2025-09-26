@@ -1,0 +1,1 @@
+All rights reserved JustVibes 2025

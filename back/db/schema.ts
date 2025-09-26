@@ -153,10 +153,14 @@ export const messageRelations = relations(message, ({ one }) => ({
 }));
 
 export const session = sqliteTable("session", {
-    id: text().primaryKey(),
+    id: integer().primaryKey(),
+    session_id: text().notNull().unique(),
     employee_id: text()
         .notNull()
         .references(() => employee.id, { onDelete: "cascade" }),
+    device_type: text(),
+    device_name: text(),
+    last_ip: text().notNull(),
     created_at: text().default(sql`CURRENT_TIMESTAMP`),
     expires_at: text().notNull(),
 });

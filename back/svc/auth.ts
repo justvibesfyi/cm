@@ -1,6 +1,6 @@
 // Authentication service implementation placeholder
 
-import { and, eq, gt, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, gt, sql } from "drizzle-orm";
 import { db } from "../db/db";
 import { authCode, employee, session } from "../db/schema";
 import { useEmail } from "./email";
@@ -94,7 +94,7 @@ function useAuth() {
     return true;
   }
 
-  const finalizeLogin = async (email: string, code: string) => {
+  const finalizeLogin = async (email: string, code: string, ip: string) => {
     const storedCode = await getCode(email);
 
     if (code !== storedCode) {
@@ -118,16 +118,17 @@ function useAuth() {
       .delete(session)
       .where(eq(session.employee_id, sql`(SELECT id FROM employee WHERE email = ${email})`));
 
-    const sessionId = crypto.randomUUID();
+    const session_id = crypto.randomUUID();
     await db
       .insert(session)
       .values({
-        id: sessionId,
+        session_id,
         employee_id: sql`(SELECT id FROM employee WHERE email = ${email})`,
         expires_at: sql`datetime('now', '+30 days')`,
+        last_ip: ip
       });
 
-    return sessionId;
+    return session_id;
   }
 
   const getSessionUserId = async (sessionId: string) => {
@@ -140,7 +141,7 @@ function useAuth() {
       .from(employee)
       .leftJoin(session, eq(employee.id, session.employee_id))
       .where(and(
-        eq(session.id, sessionId),
+        eq(session.session_id, sessionId),
         gt(session.expires_at, sql`datetime('now')`)
       ));
 
@@ -150,7 +151,7 @@ function useAuth() {
     return result;
   }
 
-  const logoutEmployee = async (sessionId: string) => {
+  const logoutEmployee = async (sessionId: number) => {
     const result = await db
       .delete(session)
       .where(eq(session.id, sessionId))
@@ -161,10 +162,10 @@ function useAuth() {
 
   const loginWithInvitation = async (invitationToken: string) => {
     const invitationService = useInvitation();
-    
+
     // Validate the invitation token
     const invitationData = await invitationService.validateInvitation(invitationToken);
-    
+
     if (!invitationData) {
       return null; // Invalid or expired invitation
     }
@@ -185,7 +186,7 @@ function useAuth() {
       userId = await employeeService.createEmployee(email);
     } else {
       userId = existingUser.id;
-      
+
       // Check if user already has a company (shouldn't happen with valid invitations)
       if (existingUser.company_id !== null) {
         return null; // User already has a company
@@ -198,16 +199,75 @@ function useAuth() {
       .where(eq(session.employee_id, userId));
 
     // Create new session
-    const sessionId = crypto.randomUUID();
+    const session_id = crypto.randomUUID();
     await db
       .insert(session)
       .values({
-        id: sessionId,
+        session_id,
         employee_id: userId,
         expires_at: sql`datetime('now', '+30 days')`,
+        last_ip: ''
       });
 
-    return sessionId;
+    return session_id;
+  }
+
+  const getCompanySessions = async (company_id: number) => {
+
+    const { ...sessionColumns } = getTableColumns(session);
+    const sessions = await db
+      .select({
+        ...sessionColumns,
+        email: employee.email,
+        avatar: employee.avatar,
+        first_name: employee.first_name,
+        last_name: employee.last_name
+      })
+      .from(session)
+      .leftJoin(employee, eq(session.employee_id, employee.id))
+      .where(eq(employee.company_id, company_id));
+
+    return sessions;
+  }
+
+  const deleteSession = async (company_id: number, id: number) => {
+
+    const result = await db.transaction(async (tx) => {
+      const validSession = await tx
+        .select({
+          sessionId: session.id,
+        })
+        .from(session)
+        .leftJoin(employee, eq(session.employee_id, employee.id))
+        .where(
+          and(
+            eq(session.id, id),
+            eq(employee.company_id, company_id)
+          )
+        )
+        .limit(1);
+
+      if (validSession.length === 0) {
+        throw new Error('Session not found or unauthorized');
+      }
+
+      const result = await db
+        .delete(session)
+        .where(and(
+          eq(session.id, id),
+          eq(session.employee_id, db
+            .select({ id: employee.id })
+            .from(employee)
+            .where(eq(employee.company_id, company_id))
+            .limit(1)
+          )
+        ))
+        .returning({ id: session.id });
+
+      return result;
+    });
+
+    return result.length > 0;
   }
 
   return {
@@ -220,7 +280,9 @@ function useAuth() {
     finalizeLogin,
     loginWithInvitation,
     logoutEmployee,
-    getSessionEmployee: getSessionUserId
+    getSessionEmployee: getSessionUserId,
+    getCompanySessions,
+    deleteSession
   }
 }
 

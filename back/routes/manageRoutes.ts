@@ -1,13 +1,13 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { z } from "zod";
+import z, { number } from "zod";
 import {
 	insertIntegrationSchema,
 	selectIntegrationSchema,
 } from "../db/schema.zod";
 import { applyLinkUpdate } from "../links";
+import useAuth from "../svc/auth";
 import useIntegration from "../svc/integration";
-
 import type { Integration, Platform } from "../types";
 import requiresAuth from "./middleware/requiresAuth";
 
@@ -40,19 +40,51 @@ export const manageRoutes = new Hono()
 		},
 	)
 
-	.get(
-		"/enabled-integrations",
-		async (c) => {
-			const company_id = c.var.user.company_id;
+	.get("/enabled-integrations", async (c) => {
+		const company_id = c.var.user.company_id;
 
-			if (company_id === null)
-				return c.json({ error: "You're not in a company" }, 400);
+		if (company_id === null)
+			return c.json({ error: "You're not in a company" }, 400);
 
-			const integrations = await useIntegration().getIntegrations(company_id);
+		const integrations = await useIntegration().getIntegrations(company_id);
 
-			return c.json({ integrations: integrations.filter(x => x.enabled).map(x => x.platform as Platform) });
-		},
-	)
+		return c.json({
+			integrations: integrations
+				.filter((x) => x.enabled)
+				.map((x) => x.platform as Platform),
+		});
+	})
+
+	.get("/sessions", async (c) => {
+		const company_id = c.var.user.company_id;
+
+		if (company_id === null)
+			return c.json({ error: "You're not in a company" }, 400);
+
+		const auth = useAuth();
+		const sessions = await auth.getCompanySessions(company_id);
+
+		return c.json({ sessions });
+	})
+
+	.delete("/session", zValidator('json', z.object({ id: z.int() })), async (c) => {
+		const company_id = c.var.user.company_id;
+
+		if (company_id === null)
+			return c.json({ error: "You're not in a company" }, 400);
+
+		const { id } = c.req.valid('json');
+
+		const auth = useAuth();
+		const success = await auth.deleteSession(company_id, id);
+
+		if (success) {
+			return c.json({ success }, 200)
+		}
+		else {
+			return c.json({ success, error: "Session not found" }, 404);
+		}
+	})
 
 	.put(
 		"/integration",

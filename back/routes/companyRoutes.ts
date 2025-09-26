@@ -1,10 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
-import { sql } from "bun";
 import { Hono } from "hono";
 import z from "zod";
 import useCompany from "../svc/company";
 import useEmployee from "../svc/employee";
-import type { Company } from "../types";
 import requiresAuth from "./middleware/requiresAuth";
 
 const updateCompanySchema = z.object({

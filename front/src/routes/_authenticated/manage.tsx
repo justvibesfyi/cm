@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
+	ArrowLeft,
 	Building2,
 	MessageCircle,
 	Monitor,
@@ -12,6 +13,7 @@ import ManageIntegrations from "@/components/integrations/ManageIntegrations";
 import ManageBusinessSettings from "@/components/ManageBusinessSettings";
 import { ManageEmployees } from "@/components/ManageEmployees";
 import { ManageSessions } from "@/components/ManageSessions";
+import { Button } from "@/components/ui/button";
 // Shadcn components
 import {
 	Sidebar,
@@ -29,15 +31,15 @@ import {
 type MenuSection = "platforms" | "sessions" | "employees" | "company";
 
 function ManagePage() {
+	const nav = useNavigate();
 	const [activeSection, setActiveSection] = useState<MenuSection>("platforms");
-
 
 	const menuItems = [
 		{ id: "platforms" as MenuSection, label: "Platforms", icon: MessageCircle },
 		{ id: "sessions" as MenuSection, label: "Sessions", icon: Monitor },
 		{ id: "employees" as MenuSection, label: "Employees", icon: Users },
 		{ id: "company" as MenuSection, label: "Company Info", icon: Building2 },
-	]
+	];
 
 	return (
 		<SidebarProvider>
@@ -62,7 +64,18 @@ function ManagePage() {
 						</SidebarGroupContent>
 					</SidebarGroup>
 				</SidebarContent>
-				<SidebarFooter></SidebarFooter>
+				<SidebarFooter>
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<SidebarMenuButton asChild>
+								<Link to="/app">
+									<ArrowLeft />
+									Back
+								</Link>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</SidebarFooter>
 			</Sidebar>
 
 			<main className="w-full">
@@ -72,7 +85,7 @@ function ManagePage() {
 				{activeSection === "company" && <ManageBusinessSettings />}
 			</main>
 		</SidebarProvider>
-	)
+	);
 }
 
 export const Route = createFileRoute("/_authenticated/manage")({

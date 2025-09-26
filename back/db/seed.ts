@@ -46,8 +46,10 @@ export const seedDb = async () => {
 
 	// Insert session
 	await db.insert(session).values({
-		id: "1",
+		id: 1,
+		session_id: "1",
 		employee_id: "1",
+		last_ip: '123',
 		expires_at: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
 	});
 
