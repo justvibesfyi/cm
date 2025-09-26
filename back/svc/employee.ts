@@ -24,14 +24,15 @@ const useEmployee = () => {
                 .select()
                 .from(employee)
                 .where(eq(employee.company_id, company_id));
-            return employees;
+            return employees as Employee[];
         },
-        updateEmployee: async (id: string, firstName: string, lastName: string) => {
+        updateEmployee: async (id: string, firstName: string, lastName: string, avatar: string | undefined) => {
             const [result] = await db
                 .update(employee)
                 .set({
                     first_name: firstName,
                     last_name: lastName,
+                    avatar: avatar,
                     onboarded: true
                 })
                 .where(eq(employee.id, id))
@@ -54,7 +55,8 @@ const useEmployee = () => {
                 .insert(employee)
                 .values({ id: userId, email });
             return userId;
-        }
+        },
+
     }
 }
 

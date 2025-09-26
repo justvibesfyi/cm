@@ -1,12 +1,7 @@
 import type { Employee } from "@back/types";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
-import {
-	createContext,
-	useCallback,
-	useContext,
-	useEffect,
-	useState,
-} from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 import LoadingPage from "@/components/Loading";
 import { api } from "@/lib/api";
 
@@ -19,35 +14,33 @@ export interface AuthState {
 	logout: () => void;
 }
 
+const fetchCurrentUser = async () => {
+	const response = await api.employee.me.$get();
+	if (!response.ok) {
+		throw new Error("Not authenticated");
+	}
+	const user = await response.json();
+	return user as Employee;
+};
+
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-	const [user, setUser] = useState<Employee | null>(null);
-	const [isAuthenticated, setIsAuthenticated] = useState(false);
-	const [isLoading, setIsLoading] = useState(true);
+	const queryClient = useQueryClient();
+	const {
+		data: user,
+		isFetching,
+		isError,
+	} = useQuery({ queryKey: ["get-user"], queryFn: fetchCurrentUser, retry: false });
 
-	// Restore auth state on app load
-	const refreshUser = useCallback(async () => {
-		api.employee.me
-			.$get()
-			.then(async (response) => {
-				if (!response.ok) throw new Error("Not authenticated");
+	const isAuthenticated = !!user;
 
-				const me = await response.json();
-				setUser(me);
-				setIsAuthenticated(true);
-			})
-			.finally(() => {
-				setIsLoading(false);
-			});
-	}, []);
-
-	useEffect(() => {
-		refreshUser();
-	}, [refreshUser]);
+	const refreshUser = async () => {
+		await queryClient.invalidateQueries({ queryKey: ["get-user"] });
+	};
 
 	// Show loading state while checking auth
-	if (isLoading) {
+	if (isFetching) {
 		return <LoadingPage />;
 	}
 
@@ -74,24 +67,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			throw new Error("Code expired or invalid. Please try again.");
 		}
 
-		const user = await res.json();
-		setUser(user);
-		setIsAuthenticated(true);
+		await refreshUser();
 		return true;
 	};
 
 	const logout = async () => {
 		await api.auth.logout.$get();
-
-		setUser(null);
-		setIsAuthenticated(false);
+		await refreshUser();
 	};
 
 	return (
 		<AuthContext.Provider
 			value={{
 				isAuthenticated,
-				user,
+				user: user || null,
 				startLogin,
 				verifyLogin,
 				refreshUser,

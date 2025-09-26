@@ -52,6 +52,36 @@ export const authRoutes = new Hono()
 
         return c.json(user)
     })
+    .get("/invitation/:token", async (c) => {
+        const auth = useAuth();
+        const token = c.req.param("token");
+
+        if (!token) {
+            return c.json({ error: "Invalid invitation link" }, 400);
+        }
+
+        const sessionId = await auth.loginWithInvitation(token);
+
+        if (!sessionId) {
+            return c.json({ error: "Invalid or expired invitation" }, 404);
+        }
+
+        setCookie(c, "session", sessionId, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "Strict",
+            path: "/",
+            expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+        });
+
+        const user = await auth.getSessionEmployee(sessionId);
+
+        if (!user) {
+            return c.json({ error: "Session creation failed" }, 500);
+        }
+
+        return c.redirect("/onboard");
+    })
     .get("/logout", requiresAuth, async (c) => {
         const auth = useAuth();
 

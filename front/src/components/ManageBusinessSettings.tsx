@@ -1,5 +1,6 @@
 import type { Company } from "@back/types";
 import { Avatar } from "@radix-ui/react-avatar";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Save, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
@@ -8,59 +9,96 @@ import { AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Skeleton } from "./ui/skeleton";
 
 const getCompany = async () => {
 	const res = await api.company["my-business"].$get();
 
 	if (!res.ok) {
-		return null;
+		throw new Error("Failed to fetch company");
 	}
 
 	const { company } = await res.json();
 	return company;
 };
 
-export default function ManageBusinessSettings() {
-	const [businessInfo, setBusinessInfo] = useState({
-		name: "...",
-		description: "...",
-		icon: null,
-	} as Company);
+const updateCompanyInfo = async () => {
+	const res = await api.company.update.$put({
+		json: {
+			name: businessInfo.name,
+			description: businessInfo.description,
+			icon: businessInfo.icon,
+		},
+	});
 
+	if (!res.ok) {
+		throw new Error("Failed to update company");
+	}
+};
+
+export default function ManageBusinessSettings() {
 	const [saving, setSaving] = useState(false);
 
-	useEffect(() => {
-		getCompany().then((c) => {
-			if (c) {
-				setBusinessInfo(c);
-			}
-		});
-	}, []);
+	const queryClient = useQueryClient();
+	const [_, setBusinessInfo] = useState<Company>({
+		name: "",
+		description: "",
+		icon: "",
+	});
 
-	const updateCompanyInfo = async () => {
-		setSaving(true);
-		try {
-			console.log(businessInfo);
-			const res = await api.company.update.$put({
-				json: {
-					name: businessInfo.name,
-					description: businessInfo.description,
-					icon: businessInfo.icon,
-				},
-			});
+	const {
+		data: businessInfo,
+		isFetching,
+		isError,
+	} = useQuery({
+		queryKey: ["company-info"],
+		queryFn: getCompany,
+	});
 
-			if (!res.ok) {
-				return;
-			}
+	const mutation = useMutation({
+		mutationFn: updateCompanyInfo,
+		onSuccess: () => {
+			// Invalidate and refetch
+			queryClient.invalidateQueries({ queryKey: ["company-info"] });
+		},
+	});
 
-			const c = await getCompany();
-			if (c) {
-				setBusinessInfo(c);
-			}
-		} finally {
-			setSaving(false);
-		}
-	};
+	if (isFetching) {
+		return (
+			<div className="space-y-6">
+				<div className="bg-white border border-zinc-400 rounded-lg p-6">
+					<h2 className="text-xl font-bold text-black mb-6 flex items-center gap-2">
+						<Building2 className="w-6 h-6" />
+						Business Settings
+					</h2>
+
+					<div className="space-y-4">
+						<div>
+							<Skeleton className="block text-sm mb-2 h-4 w-32" />
+							<Skeleton className="cursor-pointer h-8 w-full px-6 py-3 transition-colors flex items-center gap-2" />
+						</div>
+
+						<div>
+							<Skeleton className="block text-sm mb-2 h-4 w-32" />
+							<div className="flex items-center gap-4">
+								<div className="w-16 h-16 rounded-full flex items-center justify-center">
+									<Skeleton className="w-16 h-16 rounded-full" />
+								</div>
+
+								<Skeleton className="cursor-pointer h-8 w-full px-6 py-3 transition-colors flex items-center gap-2"></Skeleton>
+							</div>
+						</div>
+
+						<div>
+							<Skeleton className="block mb-2 h-4 w-32" />
+							<Skeleton className="w-full h-32 px-3 py-2 rounded-lg" />
+						</div>
+						<Skeleton className="cursor-pointerh-8 w-full px-6 py-3 transition-colors flex items-center gap-2"></Skeleton>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="space-y-6">
@@ -93,7 +131,10 @@ export default function ManageBusinessSettings() {
 							<div className="w-16 h-16 border border-dashed border-zinc-800 rounded-full flex items-center justify-center">
 								{businessInfo.icon ? (
 									<Avatar className="">
-										<AvatarImage className="w-16 h-16 rounded-full" src={businessInfo.icon}></AvatarImage>
+										<AvatarImage
+											className="w-16 h-16 rounded-full"
+											src={businessInfo.icon}
+										></AvatarImage>
 									</Avatar>
 								) : (
 									<Upload className="w-6 h-6 text-gray-400" />
@@ -141,7 +182,7 @@ export default function ManageBusinessSettings() {
 
 				<Button
 					onClick={updateCompanyInfo}
-					disabled={saving}
+					disabled={isFetching || saving}
 					className="mt-6 w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
 				>
 					<Save className="w-4 h-4" />

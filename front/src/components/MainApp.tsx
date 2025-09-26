@@ -27,17 +27,6 @@ type User = {
 	status: "online" | "offline";
 };
 
-type Contact = {
-	id: string;
-	name: string;
-	avatar: string;
-	platform: "telegram" | "whatsapp";
-	lastMessage: string;
-	lastMessageTime: string;
-	unreadCount: number;
-	isOnline: boolean;
-};
-
 export default function MainApp() {
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 	// const [searchQuery, setSearchQuery] = useState("");

@@ -8,15 +8,22 @@ import {
 } from "bun:test";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../../db/db";
-import { authCode, employee, session } from "../../db/schema";
+import {
+	authCode,
+	company,
+	employee,
+	invitation,
+	session,
+} from "../../db/schema";
 import useAuth from "../auth.js";
+import useInvitation from "../invitation.js";
 
 describe("useAuth", () => {
 	let originalDatabaseUrl: string | undefined;
 	let auth: ReturnType<typeof useAuth>;
 
 	beforeAll(async () => {
-		console.log(process.env.NODE_ENV)
+		console.log(process.env.NODE_ENV);
 		process.env.DATABASE_URL = ":memory:";
 		auth = useAuth();
 	});
@@ -32,9 +39,11 @@ describe("useAuth", () => {
 
 	beforeEach(async () => {
 		// Clean up tables before each test
-		await db.delete(authCode);
-		await db.delete(employee);
+		await db.delete(invitation);
 		await db.delete(session);
+		await db.delete(employee);
+		await db.delete(company);
+		await db.delete(authCode);
 	});
 
 	describe("generateCode", () => {
@@ -137,13 +146,11 @@ describe("useAuth", () => {
 			const code = "123456";
 
 			// Insert code with old timestamp (6 minutes ago)
-			await db
-				.insert(authCode)
-				.values({
-					email: testEmail,
-					code,
-					created_at: sql`datetime('now', '-6 minutes')`
-				});
+			await db.insert(authCode).values({
+				email: testEmail,
+				code,
+				created_at: sql`datetime('now', '-6 minutes')`,
+			});
 
 			const able = await auth.canRegenerateCode(testEmail);
 
@@ -155,13 +162,11 @@ describe("useAuth", () => {
 			const code = "123456";
 
 			// Insert code with timestamp 3 minutes ago
-			await db
-				.insert(authCode)
-				.values({
-					email: testEmail,
-					code,
-					created_at: sql`datetime('now', '-3 minutes')`
-				});
+			await db.insert(authCode).values({
+				email: testEmail,
+				code,
+				created_at: sql`datetime('now', '-3 minutes')`,
+			});
 
 			const able = await auth.canRegenerateCode(testEmail);
 
@@ -213,8 +218,7 @@ describe("useAuth", () => {
 
 			expect(sessionId).not.toBe(false);
 			expect(sessionId2).not.toBe(false);
-			if (sessionId === false || sessionId2 === false)
-				return;
+			if (sessionId === false || sessionId2 === false) return;
 
 			const user = await auth.getSessionEmployee(sessionId);
 			const user2 = await auth.getSessionEmployee(sessionId2);
@@ -240,6 +244,263 @@ describe("useAuth", () => {
 			const result = await auth.logoutEmployee(sessionId);
 
 			expect(result).toBe(false);
+		});
+	});
+
+	describe("loginWithInvitation", () => {
+		test("should successfully login with valid invitation for new user", async () => {
+			const email = "invited@example.com";
+			const invitationService = useInvitation();
+
+			// Create a company first
+			const [companyResult] = await db
+				.insert(company)
+				.values({
+					name: "Test Company",
+					description: "Test Description"
+				})
+				.returning({ id: company.id });
+
+			// Create an inviter employee
+			const [inviterResult] = await db
+				.insert(employee)
+				.values({
+					email: "inviter@example.com",
+					company_id: companyResult.id
+				})
+				.returning({ id: employee.id });
+
+			// Create invitation
+			const invitationId = await invitationService.createInvitation(
+				email,
+				companyResult.id,
+				inviterResult.id
+			);
+
+			// Login with invitation
+			const sessionId = await auth.loginWithInvitation(invitationId);
+
+			expect(sessionId).not.toBeNull();
+			expect(typeof sessionId).toBe("string");
+
+			// Verify session was created
+			const user = await auth.getSessionEmployee(sessionId!);
+			expect(user).toBeDefined();
+			expect(user!.email).toBe(email);
+		});
+
+		test("should successfully login with valid invitation for existing user", async () => {
+			const email = "existing@example.com";
+			const invitationService = useInvitation();
+
+			// Create a company first
+			const [companyResult] = await db
+				.insert(company)
+				.values({
+					name: "Test Company",
+					description: "Test Description"
+				})
+				.returning({ id: company.id });
+
+			// Create an inviter employee
+			const [inviterResult] = await db
+				.insert(employee)
+				.values({
+					email: "inviter@example.com",
+					company_id: companyResult.id
+				})
+				.returning({ id: employee.id });
+
+			// Create existing user without company
+			await db
+				.insert(employee)
+				.values({
+					email: email,
+					company_id: null
+				});
+
+			// Create invitation
+			const invitationId = await invitationService.createInvitation(
+				email,
+				companyResult.id,
+				inviterResult.id
+			);
+
+			// Login with invitation
+			const sessionId = await auth.loginWithInvitation(invitationId);
+
+			expect(sessionId).not.toBeNull();
+			expect(typeof sessionId).toBe("string");
+
+			// Verify session was created
+			const user = await auth.getSessionEmployee(sessionId!);
+			expect(user).toBeDefined();
+			expect(user!.email).toBe(email);
+		});
+
+		test("should return null for invalid invitation token", async () => {
+			const invalidToken = "invalid-token-123";
+
+			const sessionId = await auth.loginWithInvitation(invalidToken);
+
+			expect(sessionId).toBeNull();
+		});
+
+		test("should return null for expired invitation", async () => {
+			const email = "expired@example.com";
+			const invitationService = useInvitation();
+
+			// Create a company first
+			const [companyResult] = await db
+				.insert(company)
+				.values({
+					name: "Test Company",
+					description: "Test Description"
+				})
+				.returning({ id: company.id });
+
+			// Create an inviter employee
+			const [inviterResult] = await db
+				.insert(employee)
+				.values({
+					email: "inviter@example.com",
+					company_id: companyResult.id
+				})
+				.returning({ id: employee.id });
+
+			// Create expired invitation manually
+			const invitationId = crypto.randomUUID();
+			const expiredDate = new Date();
+			expiredDate.setDate(expiredDate.getDate() - 1); // Yesterday
+
+			await db.insert(invitation).values({
+				id: invitationId,
+				email: email,
+				company_id: companyResult.id,
+				created_by: inviterResult.id,
+				expires_at: expiredDate.toISOString()
+			});
+
+			// Try to login with expired invitation
+			const sessionId = await auth.loginWithInvitation(invitationId);
+
+			expect(sessionId).toBeNull();
+		});
+
+		test("should return null for user who already has a company", async () => {
+			const email = "hascompany@example.com";
+			const invitationService = useInvitation();
+
+			// Create companies
+			const [company1Result] = await db
+				.insert(company)
+				.values({
+					name: "Company 1",
+					description: "First Company"
+				})
+				.returning({ id: company.id });
+
+			const [company2Result] = await db
+				.insert(company)
+				.values({
+					name: "Company 2", 
+					description: "Second Company"
+				})
+				.returning({ id: company.id });
+
+			// Create user with existing company
+			await db
+				.insert(employee)
+				.values({
+					email: email,
+					company_id: company1Result.id
+				});
+
+			// Create an inviter employee for second company
+			const [inviterResult] = await db
+				.insert(employee)
+				.values({
+					email: "inviter@example.com",
+					company_id: company2Result.id
+				})
+				.returning({ id: employee.id });
+
+			// Create invitation (this should fail in real scenario, but let's test the login part)
+			const invitationId = crypto.randomUUID();
+			await db.insert(invitation).values({
+				id: invitationId,
+				email: email,
+				company_id: company2Result.id,
+				created_by: inviterResult.id,
+				expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+			});
+
+			// Try to login with invitation
+			const sessionId = await auth.loginWithInvitation(invitationId);
+
+			expect(sessionId).toBeNull();
+		});
+
+		test("should delete existing sessions when logging in with invitation", async () => {
+			const email = "multisession@example.com";
+			const invitationService = useInvitation();
+
+			// Create a company first
+			const [companyResult] = await db
+				.insert(company)
+				.values({
+					name: "Test Company",
+					description: "Test Description"
+				})
+				.returning({ id: company.id });
+
+			// Create an inviter employee
+			const [inviterResult] = await db
+				.insert(employee)
+				.values({
+					email: "inviter@example.com",
+					company_id: companyResult.id
+				})
+				.returning({ id: employee.id });
+
+			// Create user
+			const [userResult] = await db
+				.insert(employee)
+				.values({
+					email: email,
+					company_id: null
+				})
+				.returning({ id: employee.id });
+
+			// Create existing session
+			const oldSessionId = crypto.randomUUID();
+			await db.insert(session).values({
+				id: oldSessionId,
+				employee_id: userResult.id,
+				expires_at: sql`datetime('now', '+30 days')`
+			});
+
+			// Create invitation
+			const invitationId = await invitationService.createInvitation(
+				email,
+				companyResult.id,
+				inviterResult.id
+			);
+
+			// Login with invitation
+			const newSessionId = await auth.loginWithInvitation(invitationId);
+
+			expect(newSessionId).not.toBeNull();
+			expect(newSessionId).not.toBe(oldSessionId);
+
+			// Verify old session is deleted
+			const oldUser = await auth.getSessionEmployee(oldSessionId);
+			expect(oldUser).toBeUndefined();
+
+			// Verify new session works
+			const newUser = await auth.getSessionEmployee(newSessionId!);
+			expect(newUser).toBeDefined();
+			expect(newUser!.email).toBe(email);
 		});
 	});
 });

@@ -6,6 +6,7 @@ import { authRoutes } from "./routes/authRoutes";
 import { chatRoutes } from "./routes/chatRoutes";
 import { companyRoutes } from "./routes/companyRoutes";
 import { employeeRoutes } from "./routes/employeeRoutes";
+import { invitationRoutes } from "./routes/invitationRoutes";
 import { manageRoutes } from "./routes/manageRoutes";
 import { uploadRoutes } from "./routes/uploadRoutes";
 
@@ -28,7 +29,8 @@ const apiRoutes = app
 	.route("/employee", employeeRoutes)
 	.route("/company", companyRoutes)
 	.route("/chat", chatRoutes)
-	.route("/upload", uploadRoutes);
+	.route("/upload", uploadRoutes)
+	.route("/invitation", invitationRoutes);
 
 app
 	.get("/uploads/*", serveStatic({ root: "./uploads", rewriteRequestPath: (path) => path.replace(/^\/uploads/, "") }))

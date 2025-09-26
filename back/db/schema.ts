@@ -23,6 +23,13 @@ export const company = sqliteTable('company', {
     updated_at: text().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const companyRelations = relations(company, ({ many }) => ({
+    employees: many(employee),
+    customers: many(customer),
+    integrations: many(integration),
+    invitations: many(invitation),
+}));
+
 export const customer = sqliteTable(
     "customer",
     {
@@ -75,6 +82,7 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
     }),
     sessions: many(session),
     messages: many(message),
+    invitations: many(invitation),
 }));
 
 // Indexes
@@ -167,3 +175,28 @@ export const idxSessionemployee_id = index("idx_session_employee_id").on(
 export const idxSessionexpires_at = index("idx_session_expires_at").on(
     session.expires_at,
 );
+
+export const invitation = sqliteTable("invitation", {
+    id: text().primaryKey(), // UUID token for invitation links
+    email: text().notNull(),
+    company_id: integer().notNull().references(() => company.id, { onDelete: "cascade" }),
+    created_by: text().notNull().references(() => employee.id),
+    created_at: text().default(sql`CURRENT_TIMESTAMP`),
+    expires_at: text().notNull(), // 7 days from creation
+});
+
+export const invitationRelations = relations(invitation, ({ one }) => ({
+    company: one(company, {
+        fields: [invitation.company_id],
+        references: [company.id],
+    }),
+    creator: one(employee, {
+        fields: [invitation.created_by],
+        references: [employee.id],
+    }),
+}));
+
+// Indexes for invitation table
+export const idxInvitationEmail = index("idx_invitation_email").on(invitation.email);
+export const idxInvitationCompany = index("idx_invitation_company").on(invitation.company_id);
+export const idxInvitationExpires = index("idx_invitation_expires").on(invitation.expires_at);

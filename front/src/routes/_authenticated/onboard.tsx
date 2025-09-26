@@ -1,6 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Upload, User } from "lucide-react";
-import type React from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +15,7 @@ interface OnboardingData {
 
 export const Route = createFileRoute("/_authenticated/onboard")({
 	beforeLoad: (ctx) => {
+		console.log(ctx.context.auth.user?.onboarded)
 		if (ctx.context.auth.user?.onboarded) {
 			throw redirect({
 				to: "/app",
@@ -26,7 +26,6 @@ export const Route = createFileRoute("/_authenticated/onboard")({
 });
 
 function OnboardingEmployee() {
-	const nav = useNavigate();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [data, setData] = useState<OnboardingData>({
 		firstName: "",
@@ -65,16 +64,6 @@ function OnboardingEmployee() {
 	const progress = ((currentStep + 1) / steps.length) * 100;
 	const auth = useAuth();
 
-	const { user } = auth;
-
-	// after user has onboarded, navigate to the app
-	useEffect(() => {
-		console.log("user onboarded?", user?.onboarded);
-		if (user?.onboarded) {
-			nav({ to: "/app" });
-		}
-	}, [user, nav]);
-
 	const handleNext = async () => {
 		if (currentStep < steps.length - 1) {
 			console.log("not last step");
@@ -86,6 +75,7 @@ function OnboardingEmployee() {
 					json: {
 						firstName: data.firstName,
 						lastName: data.lastName,
+						avatar: data.profilePicture
 					},
 				});
 

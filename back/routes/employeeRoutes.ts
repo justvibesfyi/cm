@@ -15,7 +15,7 @@ export const employeeRoutes = new Hono()
 		const { firstName, lastName, avatar } = c.req.valid("json");
 
 		const emp = useEmployee();
-		const data = await emp.updateEmployee(c.var.user.id, firstName, lastName);
+		const data = await emp.updateEmployee(c.var.user.id, firstName, lastName, avatar);
 
 		return c.json(data);
 	})

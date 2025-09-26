@@ -21,9 +21,13 @@ const ManagePlatformButton: React.FC<ManagePlatformProps> = ({ platform }) => {
 			disabled={!platform.implemented}
 			key="telegram"
 			type="button"
-			className={`relative p-4 h-auto flex-col gap-2 w-full flex items-center cursor-pointer ${
-				isSelected ? "border-2 border-blue-400" : "border"
-			} ${platform.implemented ? "" : "opacity-50 cursor-not-allowed"}
+			className={`relative p-4 h-auto flex-col gap-2 w-full flex border-2 transition-all hover:shadow-md items-center cursor-pointer ${
+				isSelected
+					? "border-blue-500 bg-blue-50"
+					: isEnabled
+						? "border-green-200 bg-green-50"
+						: "border-gray-200 bg-gray-50 hover:border-gray-300"
+			} ${platform.implemented ? "" : "opacity-50 cursor-not-allowed hover:shadow-none"}
 			}`}
 			onMouseDown={() => {}}
 			onKeyDown={() => {}}
@@ -34,7 +38,7 @@ const ManagePlatformButton: React.FC<ManagePlatformProps> = ({ platform }) => {
 					isEnabled ? "bg-green-500" : "bg-gray-300"
 				}`}
 			/>
-			<PlatformIcon platform={platform.id} className="w-10 h-10" />
+			<PlatformIcon platform={platform.id} className="w-8 h-8" />
 			<span className="text-sm font-medium">{platform.name}</span>
 		</button>
 	);

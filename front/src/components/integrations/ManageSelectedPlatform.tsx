@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 // import { Button } from "../ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
 import { Switch } from "../ui/switch";
+import { ManageChatMesh } from "./ManageChatMesh";
 import { ManageDiscord } from "./ManageDiscord";
 import { ManageEmail } from "./ManageEmail";
 // platforms/index.ts
@@ -20,6 +21,7 @@ import { ManageZalo } from "./ManageZalo";
 export const platformSettingsMap = {
 	telegram: ManageTelegram,
 	zalo: ManageZalo,
+	chatmesh: ManageChatMesh,
 	discord: ManageDiscord,
 	whatsapp: ManageWhatsapp,
 	email: ManageEmail,

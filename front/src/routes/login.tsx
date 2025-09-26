@@ -40,28 +40,6 @@ const LoginComponent = () => {
 		}
 	}, [isAuthenticated]);
 
-	useEffect(() => {
-		if (authCode.length === 6) {
-			setIsLoading(true);
-			setMessage("");
-
-			verifyLogin(email, authCode)
-				.then(async () => {
-					setMessage("Verification successful. Redirecting...");
-
-					await nav({
-						to: "/app",
-					});
-				})
-				.catch((e) => {
-					setMessage("Verification failed. Please try again.");
-					setAuthCode("");
-					console.log(e);
-				})
-				.finally(() => setIsLoading(false));
-		}
-	}, [authCode]);
-
 	const sendEmail = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsLoading(true);
@@ -91,6 +69,30 @@ const LoginComponent = () => {
 	const formatAuthCode = (value: string) => {
 		const digits = value.replace(/\D/g, "").slice(0, 6);
 		return digits;
+	};
+
+	const onAuthChange = (input: string) => {
+		const authCode = formatAuthCode(input);
+		setAuthCode(authCode);
+		if (authCode.length === 6) {
+			setIsLoading(true);
+			setMessage("");
+
+			verifyLogin(email, authCode)
+				.then(async () => {
+					setMessage("Verification successful. Redirecting...");
+
+					await nav({
+						to: "/app",
+					});
+				})
+				.catch((e) => {
+					setMessage("Verification failed. Please try again.");
+					setAuthCode("");
+					console.log(e);
+				})
+				.finally(() => setIsLoading(false));
+		}
 	};
 
 	return (
@@ -124,7 +126,7 @@ const LoginComponent = () => {
 							<Input
 								type="text"
 								value={authCode}
-								onChange={(e) => setAuthCode(formatAuthCode(e.target.value))}
+								onChange={(e) => onAuthChange(e.target.value)}
 								placeholder="000000"
 								className="w-full px-4 py-3 bg-white border border-zinc-300 text-black placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-center text-2xl font-mono tracking-widest"
 								maxLength={6}

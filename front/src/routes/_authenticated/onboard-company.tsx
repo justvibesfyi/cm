@@ -3,12 +3,22 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	Building2,
+	CheckCircle,
 	Clock,
+	Loader2,
+	Mail,
 	Upload,
 	Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { handleFileUpload } from "@/lib/utils";
@@ -17,6 +27,15 @@ import { useAuth } from "@/providers/auth";
 interface BusinessData {
 	name: string;
 	avatar: string;
+}
+
+interface Invitation {
+	id: string;
+	email: string;
+	company_id: number;
+	created_by: string;
+	created_at: string;
+	expires_at: string;
 }
 
 export const Route = createFileRoute("/_authenticated/onboard-company")({
@@ -44,6 +63,9 @@ function CompanyOnboardingPage() {
 		avatar: "",
 	});
 	const [businessFormStep, setBusinessFormStep] = useState(0);
+	const [invitations, setInvitations] = useState<Invitation[]>([]);
+	const [loadingInvitations, setLoadingInvitations] = useState(false);
+	const [acceptingInvitation, setAcceptingInvitation] = useState<string | null>(null);
 
 	const businessSteps = [
 		{
@@ -68,12 +90,48 @@ function CompanyOnboardingPage() {
 	const businessProgress =
 		((businessFormStep + 1) / businessSteps.length) * 100;
 
-	const handleRoleSelection = (role: "business" | "employee") => {
+	const handleRoleSelection = async (role: "business" | "employee") => {
 		if (role === "business") {
 			setBusinessFormStep(0);
 			setCurrentStep("business-setup");
 		} else {
 			setCurrentStep("employee-waiting");
+			await loadInvitations();
+		}
+	};
+
+	const loadInvitations = async () => {
+		setLoadingInvitations(true);
+		try {
+			const response = await api.invitation["my-invitations"].$get();
+			if (response.ok) {
+				const data = await response.json();
+				setInvitations(data.invitations || []);
+			}
+		} catch (error) {
+			console.error("Failed to load invitations:", error);
+		} finally {
+			setLoadingInvitations(false);
+		}
+	};
+
+	const handleAcceptInvitation = async (invitationId: string) => {
+		setAcceptingInvitation(invitationId);
+		try {
+			const response = await api.invitation.accept.$post({
+				json: { invitation_id: invitationId }
+			});
+
+			if (response.ok) {
+				await refreshUser();
+				// User will be redirected by the useEffect when company_id is updated
+			} else {
+				console.error("Failed to accept invitation");
+			}
+		} catch (error) {
+			console.error("Error accepting invitation:", error);
+		} finally {
+			setAcceptingInvitation(null);
 		}
 	};
 
@@ -174,33 +232,125 @@ function CompanyOnboardingPage() {
 		</div>
 	);
 
-	const renderEmployeeWaiting = () => (
-		<div className="text-center max-w-2xl mx-auto py-12">
-			<div className="w-24 h-24 mx-auto mb-8 bg-zinc-50 rounded-full flex items-center justify-center">
-				<Clock className="w-12 h-12 text-zinc-400" />
-			</div>
-			<h1 className="text-4xl md:text-5xl font-bold mb-6 text-zinc-900">
-				Wait for an invite
-			</h1>
-			<p className="text-lg text-zinc-600 mb-4 max-w-xl mx-auto">
-				Please wait for your business owner to invite you to join their ChatMesh
-				workspace.
-			</p>
-			<p className="text-zinc-500 mb-10">
-				You'll receive an email notification once you've been added to the
-				company.
-			</p>
+	const renderEmployeeWaiting = () => {
+		if (loadingInvitations) {
+			return (
+				<div className="text-center max-w-2xl mx-auto py-12">
+					<div className="w-24 h-24 mx-auto mb-8 bg-zinc-50 rounded-full flex items-center justify-center">
+						<Loader2 className="w-12 h-12 text-zinc-400 animate-spin" />
+					</div>
+					<h1 className="text-3xl font-bold mb-4 text-zinc-900">
+						Loading invitations...
+					</h1>
+					<p className="text-zinc-600">
+						Checking for pending company invitations
+					</p>
+				</div>
+			);
+		}
 
-			<Button
-				variant="ghost"
-				onClick={() => setCurrentStep("role-selection")}
-				className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors"
-			>
-				<ArrowLeft className="w-4 h-4 mr-2" />
-				Back to role selection
-			</Button>
-		</div>
-	);
+		if (invitations.length > 0) {
+			return (
+				<div className="max-w-3xl mx-auto py-8">
+					<div className="text-center mb-8">
+						<div className="w-24 h-24 mx-auto mb-6 bg-green-50 rounded-full flex items-center justify-center">
+							<Mail className="w-12 h-12 text-green-600" />
+						</div>
+						<h1 className="text-3xl md:text-4xl font-bold mb-4 text-zinc-900">
+							You have invitations!
+						</h1>
+						<p className="text-lg text-zinc-600 max-w-xl mx-auto">
+							Choose a company to join from your pending invitations
+						</p>
+					</div>
+
+					<div className="space-y-4 mb-8">
+						{invitations.map((invitation) => (
+							<Card key={invitation.id} className="border border-zinc-200 hover:border-zinc-300 transition-colors">
+								<CardHeader className="pb-3">
+									<div className="flex items-center justify-between">
+										<div className="flex items-center space-x-3">
+											<div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+												<Building2 className="w-6 h-6 text-blue-600" />
+											</div>
+											<div>
+												<CardTitle className="text-lg">Company Invitation</CardTitle>
+												<CardDescription>
+													Expires {new Date(invitation.expires_at).toLocaleDateString()}
+												</CardDescription>
+											</div>
+										</div>
+										<Button
+											onClick={() => handleAcceptInvitation(invitation.id)}
+											disabled={acceptingInvitation === invitation.id}
+											className="bg-green-600 hover:bg-green-700 text-white"
+										>
+											{acceptingInvitation === invitation.id ? (
+												<>
+													<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+													Accepting...
+												</>
+											) : (
+												<>
+													<CheckCircle className="w-4 h-4 mr-2" />
+													Accept Invitation
+												</>
+											)}
+										</Button>
+									</div>
+								</CardHeader>
+								<CardContent className="pt-0">
+									<div className="text-sm text-zinc-600">
+										<p>Invitation ID: {invitation.id.slice(0, 8)}...</p>
+										<p>Received: {new Date(invitation.created_at).toLocaleDateString()}</p>
+									</div>
+								</CardContent>
+							</Card>
+						))}
+					</div>
+
+					<div className="text-center">
+						<Button
+							variant="ghost"
+							onClick={() => setCurrentStep("role-selection")}
+							className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors"
+						>
+							<ArrowLeft className="w-4 h-4 mr-2" />
+							Back to role selection
+						</Button>
+					</div>
+				</div>
+			);
+		}
+
+		return (
+			<div className="text-center max-w-2xl mx-auto py-12">
+				<div className="w-24 h-24 mx-auto mb-8 bg-zinc-50 rounded-full flex items-center justify-center">
+					<Clock className="w-12 h-12 text-zinc-400" />
+				</div>
+				<h1 className="text-4xl md:text-5xl font-bold mb-6 text-zinc-900">
+					Wait for an invite
+				</h1>
+				<p className="text-lg text-zinc-600 mb-4 max-w-xl mx-auto">
+					Please wait for your business owner to invite you to join their ChatMesh
+					workspace.
+				</p>
+				<p className="text-zinc-500 mb-10">
+					You'll receive an email notification once you've been added to the
+					company.
+				</p>
+
+				<Button
+					variant="ghost"
+					onClick={() => setCurrentStep("role-selection")}
+					className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors"
+				>
+					<ArrowLeft className="w-4 h-4 mr-2" />
+					Back to role selection
+				</Button>
+			</div>
+		);
+	};
 
 	const renderBusinessStepContent = () => {
 		switch (currentBusinessStep.type) {

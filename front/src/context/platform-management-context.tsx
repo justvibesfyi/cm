@@ -24,7 +24,6 @@ const PlatformManagementContext = createContext<
 	PlatformContextType | undefined
 >(undefined);
 
-
 export type PlatformMeta = {
 	id: Platform;
 	name: string;
@@ -32,46 +31,45 @@ export type PlatformMeta = {
 	implemented?: boolean;
 };
 
-const integrationMetas: PlatformMeta[] = [
-	{
+export const INTEGRATION_METAS: Record<Platform, PlatformMeta> = {
+	telegram: {
 		id: "telegram",
 		name: "Telegram",
 		keys: ["Api Key"],
 		implemented: true,
 	},
-	{
+	zalo: {
 		id: "zalo",
 		name: "Zalo",
 		keys: ["App Id", "App Secret", "Webhook Secret"],
 		implemented: true,
 	},
-	{
+	chatmesh: {
 		id: "chatmesh",
 		name: "Chat Mesh",
 		keys: ["Api Key"],
-		implemented: true,
 	},
-	// {
-	// 	id: "email",
-	// 	name: "Email",
-	// 	keys: ["SMTP Host", "SMTP Port", "Username", "Password"],
-	// },
-	{
+	email: {
+		id: "email",
+		name: "Email",
+		keys: ["SMTP Host", "SMTP Port", "Username", "Password"],
+	},
+	discord: {
 		id: "discord",
 		name: "Discord",
 		keys: ["Bot Token", "Client Id", "Client Secret"],
 	},
-	{
+	wechat: {
 		id: "wechat",
 		name: "WeChat",
 		keys: ["App Id", "App Secret", "Token", "Encoding AES Key"],
 	},
-	{
+	whatsapp: {
 		id: "whatsapp",
 		name: "WhatsApp",
 		keys: ["Phone Number Id", "Access Token", "Webhook Verify Token"],
 	},
-];
+};
 
 const createDummyIntegration = (platform: Platform): Integration | null => {
 	return {
@@ -102,7 +100,6 @@ const getIntegrationSettings = async (selectedPlatform: Platform) => {
 	}
 
 	const data = await res.json();
-	console.log(data);
 	return data.integration;
 };
 
@@ -201,8 +198,7 @@ export const PlatformManagementProvider = ({
 				enabledIntegrations,
 				saveSelectedIntegration,
 				selectedIntegration,
-				updateEphemeralSelectedIntegration,
-				integrationMetas,
+				updateEphemeralSelectedIntegration
 			}}
 		>
 			{children}

@@ -72,4 +72,16 @@ export const companyRoutes = new Hono()
 			return c.json({ error: "Company not found" }, 404);
 
 		return c.json({ company });
-	});
+	})
+	// get employees for a company
+	.get("/employees", async (c) => {
+		const company_id = c.var.user.company_id;
+		if (company_id === null)
+			return c.json({ error: "You're not in a company" }, 400);
+
+		const emp = useEmployee();
+		const employees = await emp.getCompanyEmployees(company_id);
+
+		return c.json({ employees });
+	})
+	;

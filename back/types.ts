@@ -2,19 +2,10 @@ import type z from "zod";
 import {
 	type insertMessageSchema,
 	type selectCompanySchema,
+	type selectEmployeeSchema,
 	selectIntegrationSchema,
+	type selectInvitationSchema,
 } from "./db/schema.zod";
-
-export interface Employee {
-	id: string;
-	email: string;
-	onboarded: number;
-	first_name: string;
-	last_name: string;
-	avatar: string;
-	company_id: number;
-	role: string;
-}
 
 export type Company = z.infer<typeof selectCompanySchema>;
 
@@ -27,7 +18,10 @@ export interface Customer {
 }
 export type Message = z.infer<typeof insertMessageSchema>;
 export type Integration = z.infer<typeof selectIntegrationSchema>;
+export type Invitation = z.infer<typeof selectInvitationSchema>;
 
 export const PlatformSchema = selectIntegrationSchema.shape.platform;
 export type Platform = z.infer<typeof PlatformSchema>;
 export type PlatformConst = Platform[keyof Platform];
+
+export type Employee = z.infer<typeof selectEmployeeSchema>;

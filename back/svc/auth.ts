@@ -5,6 +5,7 @@ import { db } from "../db/db";
 import { authCode, employee, session } from "../db/schema";
 import { useEmail } from "./email";
 import useEmployee from "./employee";
+import useInvitation from "./invitation";
 
 function useAuth() {
 
@@ -158,6 +159,57 @@ function useAuth() {
     return result.length > 0;
   }
 
+  const loginWithInvitation = async (invitationToken: string) => {
+    const invitationService = useInvitation();
+    
+    // Validate the invitation token
+    const invitationData = await invitationService.validateInvitation(invitationToken);
+    
+    if (!invitationData) {
+      return null; // Invalid or expired invitation
+    }
+
+    const email = invitationData.email;
+
+    // Check if user already exists
+    const [existingUser] = await db
+      .select()
+      .from(employee)
+      .where(eq(employee.email, email));
+
+    let userId: string;
+
+    if (!existingUser) {
+      // Create new user account
+      const employeeService = useEmployee();
+      userId = await employeeService.createEmployee(email);
+    } else {
+      userId = existingUser.id;
+      
+      // Check if user already has a company (shouldn't happen with valid invitations)
+      if (existingUser.company_id !== null) {
+        return null; // User already has a company
+      }
+    }
+
+    // Delete any existing sessions for this user
+    await db
+      .delete(session)
+      .where(eq(session.employee_id, userId));
+
+    // Create new session
+    const sessionId = crypto.randomUUID();
+    await db
+      .insert(session)
+      .values({
+        id: sessionId,
+        employee_id: userId,
+        expires_at: sql`datetime('now', '+30 days')`,
+      });
+
+    return sessionId;
+  }
+
   return {
     canRegenerateCode,
     generateCode,
@@ -166,6 +218,7 @@ function useAuth() {
     useCode,
     sendCodeEmail,
     finalizeLogin,
+    loginWithInvitation,
     logoutEmployee,
     getSessionEmployee: getSessionUserId
   }
