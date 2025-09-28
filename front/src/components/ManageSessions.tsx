@@ -1,10 +1,11 @@
 import { Separator } from "@radix-ui/react-separator";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Badge,
 	Cable,
 	Calendar,
 	Clock,
+	LoaderCircle,
 	MapPin,
 	Monitor,
 	Shield,
@@ -15,6 +16,22 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
+
+export const revokeSession = async (id: number) => {
+	console.log("revoking");
+	await new Promise((res) => setTimeout(res, 2000));
+
+	console.log("revoked");
+	// const res = await api.manage.session.$delete({
+	// 	json: {
+	// 		id,
+	// 	},
+	// });
+
+	// if (!res.ok) {
+	// 	throw new Error("Unable to revoke session");
+	// }
+};
 
 export const getSessions = async () => {
 	const res = await api.manage.sessions.$get();
@@ -28,29 +45,37 @@ export const getSessions = async () => {
 	return sessions;
 };
 
+const getDeviceIcon = (deviceType: string) => {
+	switch (deviceType) {
+		case "mobile":
+			return Smartphone;
+		case "tablet":
+			return Tablet;
+		default:
+			return Monitor;
+	}
+};
+
 export const ManageSessions = () => {
-	const {
-		data: sessions,
-		isFetching,
-		isError,
-	} = useQuery({ queryKey: ["all-sessions"], queryFn: getSessions });
+	const { data: sessions } = useQuery({
+		queryKey: ["all-sessions"],
+		queryFn: getSessions,
+	});
 
-	const getDeviceIcon = (deviceType: string) => {
-		switch (deviceType) {
-			case "mobile":
-				return Smartphone;
-			case "tablet":
-				return Tablet;
-			default:
-				return Monitor;
-		}
-	};
+	const queryClient = useQueryClient();
 
-	const revokeSession = (sessionId: string) => {};
+	const revokeSessionMutation = useMutation({
+		mutationFn: (sid: number) => revokeSession(sid),
+		onSettled: () => queryClient.invalidateQueries({ queryKey: ["todos"] }),
+	});
+
+	const { variables, isPending } = revokeSessionMutation;
 
 	if (!sessions) {
-		return <>Loading...</>;
+		return "Loading...";
 	}
+
+	console.log(variables, isPending);
 
 	return (
 		<div className="p-4">
@@ -124,17 +149,20 @@ export const ManageSessions = () => {
 								</div>
 							</div>
 
-							{!session.current && (
-								<Button
-									variant="ghost"
-									size="sm"
-									className="text-destructive hover:text-destructive"
-									onClick={() => revokeSession(session.id)}
-								>
+							<Button
+								disabled={isPending && variables === session.id}
+								variant="ghost"
+								size="sm"
+								className="text-destructive hover:text-destructive cursor-pointer"
+								onClick={() => revokeSessionMutation.mutate(session.id)}
+							>
+								{isPending && variables === session.id ? (
+									<LoaderCircle className="animate-spin" />
+								) : (
 									<Shield className="w-4 h-4 mr-1" />
-									Revoke
-								</Button>
-							)}
+								)}
+								Revoke
+							</Button>
 						</div>
 					);
 				})}

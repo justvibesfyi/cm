@@ -1,5 +1,5 @@
 import type { Platform } from "@back/types";
-import { Hash, Mail, MailIcon } from "lucide-react";
+import { Hash, Mail } from "lucide-react";
 import type React from "react";
 import Discord from "./social_media/discord.svg";
 import Telegram from "./social_media/telegram.svg";

@@ -44,11 +44,11 @@ export const INTEGRATION_METAS: Record<Platform, PlatformMeta> = {
 		keys: ["App Id", "App Secret", "Webhook Secret"],
 		implemented: true,
 	},
-	chatmesh: {
-		id: "chatmesh",
-		name: "Chat Mesh",
-		keys: ["Api Key"],
-	},
+	// chatmesh: {
+	// 	id: "chatmesh",
+	// 	name: "Chat Mesh",
+	// 	keys: ["Api Key"],
+	// },
 	email: {
 		id: "email",
 		name: "Email",
