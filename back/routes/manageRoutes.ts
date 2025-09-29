@@ -16,7 +16,6 @@ const integrationUpdateSchema = insertIntegrationSchema.omit({
 	id: true,
 });
 
-// POST /api/manage/integrations/enable
 export const manageRoutes = new Hono()
 	.use("*", requiresAuth)
 

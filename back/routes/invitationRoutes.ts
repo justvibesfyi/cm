@@ -33,13 +33,13 @@ export const invitationRoutes = new Hono()
         try {
             const invitation = useInvitation();
 
-            const invitation_id = await invitation.createInvitation(
+            await invitation.createInvitation(
                 email,
                 company_id,
                 c.var.user.id
             );
 
-            return c.json({ success: true, invitation_id });
+            return c.json({ success: true });
         } catch (error) {
             console.error("Failed to create invitation:", error);
             return c.json({ error: "Failed to create invitation" }, 500);
@@ -101,7 +101,7 @@ export const invitationRoutes = new Hono()
 
         try {
             const invitations = await invitation.getUserInvitations(userEmail);
-            
+
             // Filter out expired invitations
             const validInvitations = [];
             const now = new Date();

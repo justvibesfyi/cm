@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/db";
 import { employee } from "../db/schema";
 import type { Employee } from "../types";
@@ -49,14 +49,20 @@ const useEmployee = () => {
 
             return result.length > 0;
         },
-        createEmployee: async (email: string) => {
+        createEmployee: async (email: string, company_id: number | null = null) => {
             const userId = crypto.randomUUID();
             await db
                 .insert(employee)
-                .values({ id: userId, email });
+                .values({ id: userId, email, company_id });
             return userId;
         },
+        removeEmployee: async (id: string, company_id: number) => {
+            const count = await db
+                .delete(employee)
+                .where(and(eq(employee.id, id), eq(employee.company_id, company_id)));
 
+            return count > 0;
+        }
     }
 }
 

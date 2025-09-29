@@ -1,36 +1,28 @@
 import { Separator } from "@radix-ui/react-separator";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	Badge,
 	Cable,
 	Calendar,
-	Clock,
 	LoaderCircle,
-	MapPin,
 	Monitor,
 	Shield,
 	Smartphone,
 	Tablet,
 } from "lucide-react";
-import { useState } from "react";
 import { api } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
-export const revokeSession = async (id: number) => {
-	console.log("revoking");
-	await new Promise((res) => setTimeout(res, 2000));
+export const revokeSession = async (_id: number) => {
+	const res = await api.manage.session.$delete({
+		json: {
+			id: _id,
+		},
+	});
 
-	console.log("revoked");
-	// const res = await api.manage.session.$delete({
-	// 	json: {
-	// 		id,
-	// 	},
-	// });
-
-	// if (!res.ok) {
-	// 	throw new Error("Unable to revoke session");
-	// }
+	if (!res.ok) {
+		throw new Error("Unable to revoke session");
+	}
 };
 
 export const getSessions = async () => {
@@ -45,7 +37,7 @@ export const getSessions = async () => {
 	return sessions;
 };
 
-const getDeviceIcon = (deviceType: string) => {
+const getDeviceIcon = (deviceType: string | null) => {
 	switch (deviceType) {
 		case "mobile":
 			return Smartphone;
@@ -66,7 +58,7 @@ export const ManageSessions = () => {
 
 	const revokeSessionMutation = useMutation({
 		mutationFn: (sid: number) => revokeSession(sid),
-		onSettled: () => queryClient.invalidateQueries({ queryKey: ["todos"] }),
+		onSettled: () => queryClient.invalidateQueries({ queryKey: ["all-sessions"] }),
 	});
 
 	const { variables, isPending } = revokeSessionMutation;
@@ -75,16 +67,15 @@ export const ManageSessions = () => {
 		return "Loading...";
 	}
 
-	console.log(variables, isPending);
-
 	return (
-		<div className="p-4">
-			<p className="text-sm text-muted-foreground">
-				Manage active user sessions and security
-			</p>
-			<div className="space-y-4">
-				{sessions.map((session) => {
-					const DeviceIcon = getDeviceIcon(session.device_type);
+		<div className="max-w-4xl mx-auto px-4 py-8">
+			<section>
+				<h2 className="text-2xl font-bold mb-2">Active Sessions</h2>
+				<p className="text-gray-600 mb-6">
+					Manage active user sessions and security
+				</p>
+				<div className="space-y-4">
+					{sessions.map((session) => {
 					const fullName =
 						[session.first_name, session.last_name].filter(Boolean).join(" ") ||
 						"—";
@@ -101,7 +92,7 @@ export const ManageSessions = () => {
 									<Avatar>
 										<AvatarImage src={session.avatar || undefined} />
 										<AvatarFallback>
-											{session.email.slice(0, 2).toUpperCase()}
+											{session.email?.slice(0, 2).toUpperCase() || "U"}
 										</AvatarFallback>
 									</Avatar>
 								</div>
@@ -166,7 +157,8 @@ export const ManageSessions = () => {
 						</div>
 					);
 				})}
-			</div>
+				</div>
+			</section>
 		</div>
 	);
 };

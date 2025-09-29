@@ -1,8 +1,10 @@
 - [x] platform icons
 - [x] Image Uploads
 - [x] avatar missing fallback
-- Invites
-- Client Error page
+- [x] Invites
+- [x] Client Error page
+- Not found error page
+- see customer platform info
 
 - Employee Roles
     - 2 types of contacts: Customers and Employees
@@ -16,10 +18,12 @@
     - Either switch to socket/io (doesn't work through vite proxy idk why), hono ws (seems basic), bun ws (not sure how to share ws instance around)
     - Or delete websocket packages from frontend and backend
 
-- see customer platform info (on hover?)
+- auto translation of chat messages
 - localization
 - dark theme fix (provider added already)
 - telegram image seems to change even if avatar hasn't changed (old link becomes broken). Either compare hash or just replace the image once link changes
+- a mini table of key-value pairs that employeyes can add (for example businesses might want to know what product that user bought, or what hotel he's staying in. So "product": "shirt" or "hotel": "inn"). Keys would be specified by admins.
+    - might not be needed as notes are there
 
 - initiate conversation
     - Might be limited based on the platform
@@ -27,6 +31,8 @@
     - GDPR (auto deletion of user data after 30)
     - encryption of messages and keys
 
+- ai powered fixes, suggestions, translations, etc
+- ai powered replies
 - multiple conversations per user (closed tickets)
 - analytics
   - how many users 

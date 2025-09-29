@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Hash } from "lucide-react";
 import type React from "react";
 import PlatformIntegration from "@/components/LandingPlatformIntegration";
-import PlatformIcon from "../components/PlatformIcon";
+import { Button } from "@/components/ui/button";
 
 const ChatMeshLandingPage: React.FC = () => {
 	return (
@@ -11,15 +11,13 @@ const ChatMeshLandingPage: React.FC = () => {
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div className="flex justify-between h-16">
 						<div className="flex items-center">
-							<span className="text-xl font-bold text-blue-600">ChatMesh</span>
+							<Link to="/" className="text-xl font-bold text-indigo-600">
+								ChatMesh
+							</Link>
 						</div>
 						<div className="flex items-center space-x-8">
 							<div className="hidden md:flex space-x-6">
 								<div className="relative group">
-									<button className="font-medium hover:text-blue-600 focus:outline-none">
-										Products
-										<span className="ml-1 text-gray-400">↓</span>
-									</button>
 									<div className="absolute left-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden group-hover:block">
 										<div
 											className="py-1"
@@ -49,21 +47,24 @@ const ChatMeshLandingPage: React.FC = () => {
 								</div>
 								<a
 									href="#use-cases"
-									className="font-medium hover:text-blue-600"
+									className="font-medium hover:text-indigo-600"
 								>
 									Use Cases
 								</a>
-								<a href="#pricing" className="font-medium hover:text-blue-600">
+								<a
+									href="#pricing"
+									className="font-medium hover:text-indigo-600"
+								>
 									Pricing
 								</a>
 							</div>
 						</div>
 						<div className="flex items-center">
-							<button className="bg-white border border-gray-300 rounded-full px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3">
-								Get a demo
-							</button>
-							<Link className="bg-blue-600 text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-blue-700">
-								Start for free
+							<Link
+								to="/app"
+								className="bg--600 text-white rounded-full px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-blue-700"
+							>
+								Start for Free
 							</Link>
 						</div>
 					</div>
@@ -73,41 +74,39 @@ const ChatMeshLandingPage: React.FC = () => {
 			<section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 					<div>
-						<h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
-							<span className="text-red-600">Boost</span> Your Customer Support
-							Efficiency
+						<h1 className="text-4xl md:text-5xl font-bold leading-tight">
+							Chat Mesh
 						</h1>
-						<p className="text-xl text-gray-600 mb-8">
-							ChatMesh helps businesses streamline customer support with
-							powerful features across all messaging channels.
+						<h4>A single place to do all of your customer support</h4>
+						<p className="text-xl text-gray-600 mt-4 mb-8">
+							ChatMesh helps businesses do customer support with powerful
+							features by integrating all messaging channels into a single
+							dashboard.
 						</p>
 
-						{/* Key Metrics - Accurate for Startup */}
 						<div className="grid grid-cols-3 gap-4 mb-8">
-							<div className="bg-blue-50 rounded-lg p-4 text-center">
-								<div className="text-2xl font-bold text-blue-600">50%</div>
-								<div className="text-sm text-gray-600">
+							<div className="bg-blue-50 rounded-lg p-4 text-center flex flex-col">
+								<div className="text-2xl font-bold text-indigo-600">50%</div>
+								<div className="text-sm text-gray-600 grow">
 									Faster Response Time
 								</div>
 								<div className="text-xs text-gray-500 mt-1">
-									With unified inbox & replies
+									With unified inbox & auto replies
 								</div>
 							</div>
-							<div className="bg-green-50 rounded-lg p-4 text-center">
+							<div className="bg-green-50 rounded-lg p-4 text-center flex flex-col">
 								<div className="text-2xl font-bold text-green-600">100%</div>
-								<div className="text-sm text-gray-600">
+								<div className="text-sm text-gray-600 grow">
 									Improved Collaboration
 								</div>
 								<div className="text-xs text-gray-500 mt-1">
 									Internal notes & conversation history
 								</div>
 							</div>
-							<div className="bg-purple-50 rounded-lg p-4 text-center">
-								<div className="text-2xl font-bold text-purple-600">
-									up to 80%
-								</div>
-								<div className="text-sm text-gray-600">Lower Costs</div>
-								<div className="text-xs text-gray-500 mt-1">
+							<div className="bg-purple-50 rounded-lg p-4 text-center flex flex-col">
+								<div className="text-2xl font-bold text-purple-600">80%</div>
+								<div className="text-sm text-gray-600 grow">Lower Costs</div>
+								<div className="text-xs text-gray-500 mt-auto">
 									Much more affordable than competition
 								</div>
 							</div>
@@ -162,15 +161,16 @@ const ChatMeshLandingPage: React.FC = () => {
 						</div>
 
 						<div className="flex justify-center sm:flex-row gap-3 mb-8">
-							<button
+							<Button
 								type="button"
 								className="cursor-pointer inline-flex select-none items-center justify-center text-lg font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-primary bg-primary text-primary-foreground hover:bg-primary/90 px-6 w-full py-[13px] rounded-full border-none shadow-md"
 							>
 								<div className="flex items-center gap-2">
 									<Hash />
-									<span className="hidden sm:inline">Start for Free</span>
+
+									<Link to="/login">Start for Free</Link>
 								</div>
-							</button>
+							</Button>
 						</div>
 					</div>
 
@@ -247,7 +247,10 @@ const ChatMeshLandingPage: React.FC = () => {
 					</div>
 				</div>
 			</section>
-			<section className="grid grid-cols-2 md:grid-cols-4 items-stretch">
+			<section
+				id="use-cases"
+				className="grid grid-cols-2 md:grid-cols-4 items-stretch"
+			>
 				{[
 					{
 						title: "End Fragmented Support",
@@ -267,7 +270,7 @@ const ChatMeshLandingPage: React.FC = () => {
 					{
 						title: "Empower Your Support Team",
 						content:
-							"Assign conversations, add private notes, and see full customer history — all without leaving the chat. Perfect for teams of 2, 20 or 200.",
+							"Assign conversations, add private notes, and see full customer history - all without leaving the chat. Perfect for teams of 2 or 20.",
 						metrics: [
 							"Zero context switching",
 							"Seamless handoffs between agents",
@@ -276,7 +279,7 @@ const ChatMeshLandingPage: React.FC = () => {
 					{
 						title: "Automate Routine Queries",
 						content:
-							"Let AI handle FAQs like “Where’s my order?” or “How do I reset my password?” — freeing your team for complex issues that need a human touch.",
+							"Let AI handle FAQs like “Where’s my order?” or “How do I reset my password?” - freeing your team for complex issues that need a human touch.",
 						metrics: [
 							"Up to 40% of tickets auto-resolved",
 							"Train bots per channel",
@@ -306,7 +309,7 @@ const ChatMeshLandingPage: React.FC = () => {
 					{
 						title: "Why Customers Choose ChatMesh",
 						content:
-							"Because support shouldn’t mean chaos. Get clarity, speed, and control — without enterprise complexity or pricing.",
+							"Because support shouldn’t mean chaos. Get clarity, speed, and control. No enterprise complexity or pricing.",
 						metrics: [
 							"Simple UI, powerful results",
 							"Made for teams who value time",
@@ -317,7 +320,7 @@ const ChatMeshLandingPage: React.FC = () => {
 						key={index}
 						className="bg-white border border-secondary-200 p-6 hover:shadow-lg transition duration-300 flex flex-col h-full"
 					>
-						<h3 className="font-bold text-blue-600 mb-3">{card.title}</h3>
+						<h3 className="font-bold text-indigo-600 mb-3">{card.title}</h3>
 						<p className="text-gray-600 mb-4 text-sm">{card.content}</p>
 						<div className="mt-auto">
 							{card.metrics.map((metric, i) => (
@@ -359,18 +362,19 @@ const ChatMeshLandingPage: React.FC = () => {
 					</p>
 				</div>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-					<div className="bg-white rounded-2xl border border-gray-200 p-8">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-0 max-w-4xl mx-auto">
+					<div className="bg-white border border-gray-200 p-8 flex flex-col">
 						<h3 className="text-2xl font-bold mb-2">Free Plan</h3>
 						<div className="text-4xl font-bold mb-4">
 							$0<span className="text-xl font-normal">/month</span>
 						</div>
-						<ul className="space-y-3 mb-8">
+						<ul className="space-y-3 mb-8 flex-grow">
 							<li className="flex items-center">
 								<svg
 									className="w-5 h-5 text-green-500 mr-2"
 									fill="currentColor"
 									viewBox="0 0 20 20"
+									aria-label="Check mark"
 								>
 									<path
 										fillRule="evenodd"
@@ -385,6 +389,7 @@ const ChatMeshLandingPage: React.FC = () => {
 									className="w-5 h-5 text-green-500 mr-2"
 									fill="currentColor"
 									viewBox="0 0 20 20"
+									aria-label="Check mark"
 								>
 									<path
 										fillRule="evenodd"
@@ -399,6 +404,7 @@ const ChatMeshLandingPage: React.FC = () => {
 									className="w-5 h-5 text-green-500 mr-2"
 									fill="currentColor"
 									viewBox="0 0 20 20"
+									aria-label="Check mark"
 								>
 									<path
 										fillRule="evenodd"
@@ -408,26 +414,46 @@ const ChatMeshLandingPage: React.FC = () => {
 								</svg>
 								Basic message management
 							</li>
+							<li className="flex items-center">
+								<svg
+									className="w-5 h-5 text-green-500 mr-2"
+									fill="currentColor"
+									viewBox="0 0 20 20"
+									aria-label="Check mark"
+								>
+									<path
+										fillRule="evenodd"
+										d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+										clipRule="evenodd"
+									/>
+								</svg>
+								Email support
+							</li>
 						</ul>
-						<button className="w-full bg-gray-100 text-gray-800 py-3 rounded-lg font-medium hover:bg-gray-200 transition">
-							Start for Free
-						</button>
+						<Button
+							asChild
+							type="button"
+							className="w-full bg-gray-100 text-gray-800 py-3 font-medium hover:bg-gray-200 transition border border-gray-300"
+						>
+							<Link to="/login">Start for Free</Link>
+						</Button>
 					</div>
 
-					<div className="bg-white rounded-2xl border-2 border-blue-600 p-8 relative">
-						<div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full">
+					<div className="bg-white border border-indigo-600 border-l-0 md:border-l md:border-l-indigo-600 p-8 flex flex-col relative">
+						<div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white text-xs font-bold px-4 py-1">
 							POPULAR
 						</div>
 						<h3 className="text-2xl font-bold mb-2">Pro Plan</h3>
 						<div className="text-4xl font-bold mb-4">
 							$39<span className="text-xl font-normal">/month</span>
 						</div>
-						<ul className="space-y-3 mb-8">
+						<ul className="space-y-3 mb-8 flex-grow">
 							<li className="flex items-center">
 								<svg
 									className="w-5 h-5 text-green-500 mr-2"
 									fill="currentColor"
 									viewBox="0 0 20 20"
+									aria-label="Check mark"
 								>
 									<path
 										fillRule="evenodd"
@@ -442,6 +468,7 @@ const ChatMeshLandingPage: React.FC = () => {
 									className="w-5 h-5 text-green-500 mr-2"
 									fill="currentColor"
 									viewBox="0 0 20 20"
+									aria-label="Check mark"
 								>
 									<path
 										fillRule="evenodd"
@@ -456,6 +483,7 @@ const ChatMeshLandingPage: React.FC = () => {
 									className="w-5 h-5 text-green-500 mr-2"
 									fill="currentColor"
 									viewBox="0 0 20 20"
+									aria-label="Check mark"
 								>
 									<path
 										fillRule="evenodd"
@@ -470,6 +498,7 @@ const ChatMeshLandingPage: React.FC = () => {
 									className="w-5 h-5 text-green-500 mr-2"
 									fill="currentColor"
 									viewBox="0 0 20 20"
+									aria-label="Check mark"
 								>
 									<path
 										fillRule="evenodd"
@@ -484,6 +513,7 @@ const ChatMeshLandingPage: React.FC = () => {
 									className="w-5 h-5 text-green-500 mr-2"
 									fill="currentColor"
 									viewBox="0 0 20 20"
+									aria-label="Check mark"
 								>
 									<path
 										fillRule="evenodd"
@@ -494,33 +524,38 @@ const ChatMeshLandingPage: React.FC = () => {
 								Priority support
 							</li>
 						</ul>
-						<button className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition">
-							Start Free Trial
-						</button>
-						<p className="text-center text-sm text-gray-500 mt-3">
-							No credit card required • 30-day money-back guarantee
-						</p>
+						<Button
+							asChild
+							type="button"
+							className="w-full bg-indigo-600 text-white py-3 font-medium hover:bg-blue-700 transition border border-indigo-600"
+						>
+							<Link to="/login">Start for Free</Link>
+						</Button>
 					</div>
 				</div>
 			</section>
 
-			<section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl my-12">
+			<section className="mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-white border border-gray-200">
 				<div className="text-center">
 					<h3 className="text-3xl font-bold mb-4">
 						Ready to Simplify Your Customer Support?
 					</h3>
 					<p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
 						Join businesses using ChatMesh to streamline their customer
-						communication
+						communication across all messaging platforms
 					</p>
 					<div className="flex flex-col sm:flex-row justify-center gap-4">
-						<button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium text-lg hover:bg-blue-700 transition duration-300">
-							Start Free Trial
-						</button>
-						<button className="border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-lg font-medium text-lg hover:bg-blue-50 transition duration-300">
-							Get a Demo
-						</button>
+						<Button
+							asChild
+							type="button"
+							className="bg-indigo-600 text-white px-8 py-3 font-medium text-lg hover:bg-blue-700 transition duration-300 border border-indigo-600"
+						>
+							<Link to="/login">Start for Free</Link>
+						</Button>
 					</div>
+					<p className="text-sm text-gray-500 mt-4">
+						No credit card required • Setup in 5 minutes • Cancel anytime
+					</p>
 				</div>
 			</section>
 		</div>

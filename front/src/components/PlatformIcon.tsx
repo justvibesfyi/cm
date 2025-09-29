@@ -2,6 +2,7 @@ import type { Platform } from "@back/types";
 import { Hash, Mail } from "lucide-react";
 import type React from "react";
 import Discord from "./social_media/discord.svg";
+import KakaoTalk from "./social_media/kakaotalk.svg";
 import Telegram from "./social_media/telegram.svg";
 import WeChat from "./social_media/wechat.svg";
 import WhatsApp from "./social_media/whatsapp.svg";
@@ -27,6 +28,8 @@ const PlatformIcon: React.FC<PlatformIconProps> = (props) => {
 			return <Mail {...props} />;
 		case "wechat":
 			return <WeChat {...props} />;
+		case "kakaotalk":
+			return <KakaoTalk {...props} />;
 		default:
 			return <Hash {...props} />;
 	}

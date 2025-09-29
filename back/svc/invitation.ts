@@ -34,6 +34,7 @@ const useInvitation = () => {
 
             const invitation_id = crypto.randomUUID();
 
+            console.log(invitation_id);
             const expires_at = new Date();
             expires_at.setDate(expires_at.getDate() + 7);
 

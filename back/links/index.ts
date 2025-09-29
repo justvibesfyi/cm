@@ -13,6 +13,7 @@ const linkMap = new Map<string, Link>();
 const createKey = (integration: Integration) => `${integration.company_id}:${integration.platform}`;
 
 export const runLink = async (integration: Integration) => {
+    console.log("running link", integration.platform)
     const key = createKey(integration)
     // remove old one
     const old = linkMap.get(key);

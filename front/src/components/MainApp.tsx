@@ -130,7 +130,7 @@ export default function MainApp() {
 
 				{/* Chat Window */}
 				{selectedConvo ? (
-					<ChatWindow contact={selectedConvo} />
+						<ChatWindow contact={selectedConvo} />
 				) : (
 					<div className="flex-1 flex items-center justify-center bg-muted">
 						<div className="text-center">

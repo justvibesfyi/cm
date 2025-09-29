@@ -1,6 +1,6 @@
 // Authentication service implementation placeholder
 
-import { and, eq, getTableColumns, gt, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, gt, inArray, sql } from "drizzle-orm";
 import { db } from "../db/db";
 import { authCode, employee, session } from "../db/schema";
 import { useEmail } from "./email";
@@ -183,13 +183,13 @@ function useAuth() {
     if (!existingUser) {
       // Create new user account
       const employeeService = useEmployee();
-      userId = await employeeService.createEmployee(email);
+      userId = await employeeService.createEmployee(email, invitationData.company_id);
     } else {
       userId = existingUser.id;
 
       // Check if user already has a company (shouldn't happen with valid invitations)
       if (existingUser.company_id !== null) {
-        return null; // User already has a company
+        return null;
       }
     }
 
@@ -231,43 +231,19 @@ function useAuth() {
   }
 
   const deleteSession = async (company_id: number, id: number) => {
-
-    const result = await db.transaction(async (tx) => {
-      const validSession = await tx
-        .select({
-          sessionId: session.id,
-        })
-        .from(session)
-        .leftJoin(employee, eq(session.employee_id, employee.id))
-        .where(
-          and(
-            eq(session.id, id),
-            eq(employee.company_id, company_id)
-          )
+    const result = await db
+      .delete(session)
+      .where(and(
+        eq(session.id, id),
+        inArray(session.employee_id, db
+          .select({ id: employee.id })
+          .from(employee)
+          .where(eq(employee.company_id, company_id))
         )
-        .limit(1);
+      ))
+      .returning({ id: session.id });
 
-      if (validSession.length === 0) {
-        throw new Error('Session not found or unauthorized');
-      }
-
-      const result = await db
-        .delete(session)
-        .where(and(
-          eq(session.id, id),
-          eq(session.employee_id, db
-            .select({ id: employee.id })
-            .from(employee)
-            .where(eq(employee.company_id, company_id))
-            .limit(1)
-          )
-        ))
-        .returning({ id: session.id });
-
-      return result;
-    });
-
-    return result.length > 0;
+    return result;
   }
 
   return {

@@ -1,5 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { BriefcaseBusiness, Building, Building2, LogOut, Settings, Settings2 } from "lucide-react";
+import {
+	BriefcaseBusiness,
+	Building,
+	Building2,
+	LogOut,
+	Settings,
+	Settings2,
+} from "lucide-react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -50,13 +57,15 @@ const UserProfile = () => {
 
 				<div className="flex items-center space-x-1 ml-2">
 					<DropdownMenu>
-						<DropdownMenuTrigger className="border p-2 rounded-md">
+						<DropdownMenuTrigger className="border p-2 rounded-md cursor-pointer hover:bg-accent">
 							<Settings size={16} className="text-gray-600" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent>
-							<DropdownMenuItem>
-								<Building2 size={16} className="mr-2" />
-								<Link to="/manage">Manage Company</Link>
+							<DropdownMenuItem asChild>
+								<Link to="/manage" className="cursor-pointer">
+									<Building2 size={16} className="mr-2" />
+									Manage Company
+								</Link>
 							</DropdownMenuItem>
 							<DropdownMenuSeparator />
 							<DropdownMenuItem

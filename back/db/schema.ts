@@ -97,7 +97,7 @@ export const integration = sqliteTable(
         company_id: integer()
             .notNull()
             .references(() => company.id, { onDelete: "cascade" }),
-        platform: text({ enum: ["telegram", "zalo", "email", "whatsapp", "wechat", "discord", "chatmesh"] }).notNull(),
+        platform: text({ enum: ["telegram", "zalo", "email", "whatsapp", "wechat", "discord", "chatmesh", "instagram"] }).notNull(),
         /** zalo: app_id   
          *  telegram: api_key
          *  chatmesh: api_key

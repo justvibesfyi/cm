@@ -19,6 +19,22 @@ export const employeeRoutes = new Hono()
 
 		return c.json(data);
 	})
+	.delete("/remove", requiresAuth, zValidator("json", z.object({
+		id: z.string()
+	})), async (c) => {
+		const { company_id } = c.var.user;
+
+		if (!company_id) {
+			return c.json({ error: "You're not in a company" }, 401);
+		}
+
+		// todo check admin permisions
+		const { id } = c.req.valid("json");
+		const empDb = useEmployee();
+		const success = await empDb.removeEmployee(id, company_id)
+
+		return c.json({ success });
+	})
 	.get("/me", requiresAuth, async (c) => {
 		const emp = useEmployee();
 		const employeeData = await emp.getBasicEmployee(c.var.user.id);
