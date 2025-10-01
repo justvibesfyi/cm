@@ -2,7 +2,42 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/db";
 import { integration, message } from "../db/schema";
 import useCustomer from "../svc/customer";
+import useMessage from "../svc/message";
 import type { Integration } from "../types";
+
+interface ZaloUserDetail {
+    user_id: string;
+    user_id_by_app: string;
+    user_external_id: string;
+    display_name: string;
+    user_alias: string;
+    is_sensitive: boolean;
+    user_last_interaction_date: string;
+    user_is_follower: boolean;
+    avatar: string;
+    avatars: {
+        "120": string;
+        "240": string;
+    };
+    dynamic_param: string;
+    tags_and_notes_info: {
+        notes: string[];
+        tag_names: string[];
+    };
+    shared_info: {
+        address: string;
+        city: string;
+        district: string;
+        phone: string;
+        name: string;
+    };
+}
+
+interface ZaloUserDetailResponse {
+    data: ZaloUserDetail;
+    error: number;
+    message: string;
+}
 
 const settingsMap = new Map<
     string,
@@ -130,10 +165,7 @@ const server = Bun.serve({
                     message: {
                         text: string;
                     };
-                    info: {
-                        avatar: string;
-                        display_name: string;
-                    };
+                    info: ZaloUserDetail;
                 };
 
                 const appId = data.app_id;
@@ -153,7 +185,6 @@ const server = Bun.serve({
                     return new Response("Unauthorized", { status: 401 });
                 }
 
-                console.log(JSON.stringify(data));
                 const macSource = appId + raw + timeStamp + secret;
 
                 const mac =
@@ -173,31 +204,41 @@ const server = Bun.serve({
                     return new Response("Ignored", { status: 200 });
                 }
 
-                const userProfile = (await getUserProfile(
+                const userProfile = await getUserProfile(
                     data.sender.id,
                     companySettings.company_id,
-                )) as {
-                    avatar: string;
-                    display_name: string;
-                };
+                );
 
                 data.info = userProfile;
-                console.log(userProfile);
-
-                console.log("Forwarding to server", data);
 
                 // Insert message into database
                 try {
-                    const cdb = await useCustomer();
+                    const cdb = useCustomer();
 
-                    const id = await cdb.ensureCustomer("zalo", data.sender.id, data.info.display_name, data.info.avatar, companySettings.company_id);
+                    const id = await cdb.ensureCustomer(
+                        "zalo",
+                        data.sender.id,
+                        data.info.display_name,
+                        data.info.display_name,
+                        companySettings.company_id,
+                        data.info.avatar,
+                        data.info.shared_info?.phone,
+                        "vn",
+                        data.info.shared_info.city
+                            ? `${data.info.shared_info?.city} ${data.info.shared_info.district}`
+                            : null,
+                        "phone",
+                        null,
+                        "online",
+                    );
 
-                    await db.insert(message).values({
-                        customer_id: id,
-                        content: data.message.text,
-                        company_id: companySettings.company_id,
-                        employee_id: null,
-                    });
+                    const msgDb = useMessage();
+
+                    await msgDb.saveCustomerMessage(
+                        data.message.text,
+                        companySettings.company_id,
+                        id,
+                    );
                 } catch (error) {
                     console.error("Failed to insert message:", error);
                 }
@@ -352,14 +393,7 @@ async function getUserProfile(userId: string, company_id: number) {
         throw new Error(`Failed to fetch user profile: ${response.statusText}`);
     }
 
-    const result = (await response.json()) as {
-        data: {
-            display_name: string;
-            avatar: string;
-        };
-        error: number;
-        message: string;
-    };
+    const result = (await response.json()) as ZaloUserDetailResponse;
 
     if (result.error !== 0) {
         throw new Error(`Zalo API error: ${result.message}`);

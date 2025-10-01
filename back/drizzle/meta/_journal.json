@@ -29,6 +29,20 @@
       "when": 1758897349604,
       "tag": "0003_thankful_dreaming_celestial",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1759334086842,
+      "tag": "0004_friendly_darkhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1759337179585,
+      "tag": "0005_mean_zemo",
+      "breakpoints": true
     }
   ]
 }

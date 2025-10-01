@@ -34,19 +34,31 @@ export const customer = sqliteTable(
     "customer",
     {
         id: integer().primaryKey(),
-        platform_customer_id: text().notNull(),
         company_id: integer()
             .notNull()
             .references(() => company.id),
+
+        platform_id: text().notNull(),
+        username: text(),
         platform: text().notNull(),
-        name: text(),
-        avatar: text(),
+        lastActivity: text().notNull().default(sql`CURRENT_TIMESTAMP`),
+        full_name: text().notNull(),
         platform_channel_id: text(),
+
+        avatar: text(),
+        phone: text(),
+        country: text(),
+        city: text(),
+        device: text(),
+        ip: text(),
+        status: text({ enum: ['online', 'offline', 'idle', 'unknown'] }).notNull().default('unknown'),
+
+        assigned_to: text().references(() => employee.id),
     },
     (t) => [
         uniqueIndex("idx_customers_platform_customer_company").on(
             t.platform,
-            t.platform_customer_id,
+            t.platform_id,
             t.company_id,
         ),
     ],
@@ -57,7 +69,12 @@ export const customerRelations = relations(customer, ({ one, many }) => ({
         fields: [customer.company_id],
         references: [company.id],
     }),
+    assignedTo: one(employee, {
+        fields: [customer.assigned_to],
+        references: [employee.id],
+    }),
     messages: many(message),
+    notes: many(note),
 }));
 
 export const employee = sqliteTable("employee", {
@@ -204,3 +221,50 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
 export const idxInvitationEmail = index("idx_invitation_email").on(invitation.email);
 export const idxInvitationCompany = index("idx_invitation_company").on(invitation.company_id);
 export const idxInvitationExpires = index("idx_invitation_expires").on(invitation.expires_at);
+
+export const note = sqliteTable("note", {
+    id: integer().primaryKey(),
+    customer_id: integer()
+        .notNull()
+        .references(() => customer.id, { onDelete: "cascade" }),
+    text: text().notNull(),
+    created_at: text().default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const noteRelations = relations(note, ({ one, many }) => ({
+    customer: one(customer, {
+        fields: [note.customer_id],
+        references: [customer.id],
+    }),
+    updates: many(noteUpdate),
+}));
+
+export const noteUpdate = sqliteTable("note_update", {
+    id: integer().primaryKey(),
+    note_id: integer()
+        .notNull()
+        .references(() => note.id, { onDelete: "cascade" }),
+    employee_id: text()
+        .notNull()
+        .references(() => employee.id),
+    action: text({ enum: ["created", "updated"] }).notNull(),
+    created_at: text().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const noteUpdateRelations = relations(noteUpdate, ({ one }) => ({
+    note: one(note, {
+        fields: [noteUpdate.note_id],
+        references: [note.id],
+    }),
+    employee: one(employee, {
+        fields: [noteUpdate.employee_id],
+        references: [employee.id],
+    }),
+}));
+
+// Indexes for notes
+export const idxNoteCustomer = index("idx_note_customer").on(note.customer_id);
+export const idxNoteUpdateNote = index("idx_note_update_note").on(noteUpdate.note_id);
+export const idxNoteUpdateEmployee = index("idx_note_update_employee").on(noteUpdate.employee_id);
+

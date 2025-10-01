@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/db";
-import { message } from "../db/schema";
+import { customer, message } from "../db/schema";
 
 const useMessage = () => {
     return {
@@ -16,16 +16,26 @@ const useMessage = () => {
             return msgs;
         },
         saveCustomerMessage: async (content: string, company_id: number, customer_id: number) => {
-            console.log(content, company_id, customer_id);
+
             const res = await db
                 .insert(message)
                 .values({
                     content,
                     company_id,
+                    customer_id: customer_id,
                     employee_id: null,
-                    customer_id: customer_id
                 });
-            console.log(res)
+
+            await db
+                .update(customer)
+                .set({
+                    lastActivity: sql`CURRENT_TIMESTAMP`
+                })
+                .where(and(
+                    eq(customer.company_id, company_id),
+                    eq(customer.id, customer_id)
+                ))
+
             return res;
         },
         saveEmployeeMessage: async (content: string, company_id: number, employee_id: string, customer_id: number) => {

@@ -55,7 +55,7 @@ export const chatRoutes = new Hono()
 		const success = await sendMessageToLink(
 			employee.company_id,
 			sendTo.platform,
-			sendTo.platform_customer_id,
+			sendTo.platform_id,
 			content,
 		);
 

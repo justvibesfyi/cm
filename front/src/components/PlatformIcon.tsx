@@ -28,8 +28,6 @@ const PlatformIcon: React.FC<PlatformIconProps> = (props) => {
 			return <Mail {...props} />;
 		case "wechat":
 			return <WeChat {...props} />;
-		case "kakaotalk":
-			return <KakaoTalk {...props} />;
 		default:
 			return <Hash {...props} />;
 	}

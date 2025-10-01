@@ -37,12 +37,23 @@ export const createTelegramLink = (integration: Integration) => {
             };
 
             const customerDb = useCustomer();
+
+            const fullName = msg.from.first_name || msg.from.last_name
+                ? `${msg.from.first_name || ''} ${msg.from.last_name || ''}`.trim()
+                : msg.from.username ?? 'unknown'
             const id = await customerDb.ensureCustomer(
                 "telegram",
                 msg.from.id.toString(),
-                msg.from.username ?? msg.from.first_name,
-                data.avatarUrl || null,
+                msg.from.username || fullName,
+                fullName,
                 company_id,
+                data.avatarUrl || null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                'unknown'
             );
 
             const messageDb = useMessage();

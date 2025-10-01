@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../db/db";
 import { customer } from "../db/schema";
+import type { CustomerStatus } from "../types";
 
 const useCustomer = () => {
     return {
@@ -21,21 +22,51 @@ const useCustomer = () => {
             return customers;
         },
 
-        ensureCustomer: async (platform: string, id: string, name: string, avatar: string | null, company_id: number) => {
+        ensureCustomer: async (
+            platform: string,
+
+            platform_id: string,
+            username: string,
+            full_name: string,
+            company_id: number,
+
+            avatar: string | null,
+            phone: string | null,
+            country: string | null,
+            city: string | null,
+            device: string | null,
+            ip: string | null,
+            status: CustomerStatus = 'unknown',
+        ) => {
             const result = await db
                 .insert(customer)
                 .values({
                     platform,
-                    platform_customer_id: id,
-                    name,
+                    platform_id,
+                    username,
+                    full_name,
                     avatar,
-                    company_id
+                    company_id,
+                    phone,
+                    country,
+                    city,
+                    device,
+                    ip,
+                    lastActivity: sql`CURRENT_TIMESTAMP`,
+                    status
                 })
                 .onConflictDoUpdate({
-                    target: [customer.platform, customer.platform_customer_id, customer.company_id],
+                    target: [customer.platform, customer.platform_id, customer.company_id],
                     set: {
-                        name,
-                        avatar
+                        username,
+                        full_name,
+                        avatar,
+                        phone,
+                        country,
+                        city,
+                        device,
+                        ip,
+                        status
                     }
                 })
                 .returning({ id: customer.id });

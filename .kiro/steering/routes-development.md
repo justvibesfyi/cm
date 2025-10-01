@@ -63,10 +63,9 @@ export const companyRoutes = new Hono()
   .post("/onboard", zValidator("json", updateCompanySchema), async (c) => {
     const { name, description, icon } = c.req.valid("json");
     
-    const emp = useEmployee();
-    const { company_id } = await emp.getFullEmployee(c.var.user.id);
-    
-    if (company_id !== null) {
+    const { company_id } = c.var.user;
+
+    if (!company_id) {
       return c.json({ error: "You're already in a company" }, 401);
     }
     

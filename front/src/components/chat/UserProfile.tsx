@@ -1,12 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import {
-	BriefcaseBusiness,
-	Building,
-	Building2,
-	LogOut,
-	Settings,
-	Settings2,
-} from "lucide-react";
+import { Building2, LogOut, Settings } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,27 +9,14 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/providers/auth";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Skeleton } from "../ui/skeleton";
 
 const UserProfile = () => {
 	const { user, logout } = useAuth();
 
-	const getStatusColor = (status: string) => {
-		switch (status) {
-			case "online":
-				return "bg-green-500";
-			case "away":
-				return "bg-yellow-500";
-			case "offline":
-				return "bg-gray-400";
-			default:
-				return "bg-gray-400";
-		}
-	};
-
 	// todo skeleton
 	if (!user) {
-		return <div>...</div>;
+		return <Skeleton className="p-4 h-4 border-t" />;
 	}
 
 	return (

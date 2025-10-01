@@ -16,6 +16,9 @@ export interface ChatState {
 
 	messages: Message[];
 	sendMessage: (content: string, convo_id: number) => Promise<void>;
+
+	showContacts: boolean,
+	setShowContacts: (val: boolean) => void
 }
 
 const ChatContext = createContext<ChatState | undefined>(undefined);
@@ -66,6 +69,8 @@ export default function ChatProvider({
 	const [convos, setConvos] = useState<Customer[]>([]);
 	const [messages, setMessages] = useState([] as Message[]);
 	const [selectedConvo, setSelectedConvo] = useState<Customer | null>(null);
+
+	const [showContacts, setShowContacts] = useState(true);
 
 	const selectConvo = (contact: Customer | null) => {
 		setSelectedConvo((prev) => (prev?.id === contact?.id ? null : contact));
@@ -133,6 +138,9 @@ export default function ChatProvider({
 				selectedConvo,
 				messages,
 				sendMessage: handleSendMessage,
+
+				showContacts,
+				setShowContacts
 			}}
 		>
 			{children}

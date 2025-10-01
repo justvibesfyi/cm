@@ -8,6 +8,7 @@ import { companyRoutes } from "./routes/companyRoutes";
 import { employeeRoutes } from "./routes/employeeRoutes";
 import { invitationRoutes } from "./routes/invitationRoutes";
 import { manageRoutes } from "./routes/manageRoutes";
+import { notesRoutes } from "./routes/notesRoutes";
 import { uploadRoutes } from "./routes/uploadRoutes";
 
 // Initialize database
@@ -30,7 +31,8 @@ const apiRoutes = app
 	.route("/company", companyRoutes)
 	.route("/chat", chatRoutes)
 	.route("/upload", uploadRoutes)
-	.route("/invitation", invitationRoutes);
+	.route("/invitation", invitationRoutes)
+	.route("/notes", notesRoutes);
 
 app
 	.get("/uploads/*", serveStatic({ root: "./uploads", rewriteRequestPath: (path) => path.replace(/^\/uploads/, "") }))
