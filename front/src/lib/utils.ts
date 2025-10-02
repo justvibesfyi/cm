@@ -1,4 +1,4 @@
-import type { CustomerStatus } from "@back/types";
+import type { CustomerStatus, Employee } from "@back/types";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { api } from "./api";
@@ -46,3 +46,27 @@ export const getStatusColor = (status: CustomerStatus) => {
 			return "bg-amber-400";
 	}
 };
+
+export const getEmployeeFullName = (employee: Employee) => {
+	if (employee.first_name && employee.last_name) {
+		return `${employee.first_name} ${employee.last_name}`;
+	} else if (employee.first_name) {
+		return employee.first_name;
+	} else if (employee.last_name) {
+		return employee.last_name;
+	} else {
+		return employee.email;
+	}
+}
+
+export const getEmployeeInitials = (employee: Employee) => {
+	if (employee.first_name && employee.last_name) {
+		return `${employee.first_name[0]}${employee.last_name[0]}`;
+	} else if (employee.first_name) {
+		return employee.first_name.slice(0, 2);
+	} else if (employee.last_name) {
+		return employee.last_name.slice(0, 2);
+	} else {
+		return employee.email.slice(0, 2);
+	}
+}

@@ -5,7 +5,9 @@ import { generateCodeChallenge } from "./links/zalo";
 import { authRoutes } from "./routes/authRoutes";
 import { chatRoutes } from "./routes/chatRoutes";
 import { companyRoutes } from "./routes/companyRoutes";
+import { customerRoutes } from "./routes/customerRoutes";
 import { employeeRoutes } from "./routes/employeeRoutes";
+import { eventsRoutes } from "./routes/eventsRoutes";
 import { invitationRoutes } from "./routes/invitationRoutes";
 import { manageRoutes } from "./routes/manageRoutes";
 import { notesRoutes } from "./routes/notesRoutes";
@@ -29,10 +31,12 @@ const apiRoutes = app
 	.route("/auth", authRoutes)
 	.route("/employee", employeeRoutes)
 	.route("/company", companyRoutes)
+	.route("/customer", customerRoutes)
 	.route("/chat", chatRoutes)
 	.route("/upload", uploadRoutes)
 	.route("/invitation", invitationRoutes)
-	.route("/notes", notesRoutes);
+	.route("/notes", notesRoutes)
+	.route("/events", eventsRoutes);
 
 app
 	.get("/uploads/*", serveStatic({ root: "./uploads", rewriteRequestPath: (path) => path.replace(/^\/uploads/, "") }))

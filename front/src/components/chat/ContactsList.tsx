@@ -46,7 +46,7 @@ export const ContactsList = () => {
 				showContacts ? "block" : "hidden md:block",
 			)}
 		>
-			<div className="p-4 border-b border-gray-200">
+			<div className="h-fit p-4 border-b border-gray-200">
 				{/* Search Bar */}
 				<div className="relative mb-3">
 					<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -87,7 +87,7 @@ export const ContactsList = () => {
 				</DropdownMenu>
 			</div>
 
-			<div className="flex-1 overflow-y-auto">
+			<div className="h-fit overflow-y-auto">
 				{filteredContacts.map((contact) => (
 					<button
 						type="button"
@@ -158,10 +158,10 @@ export const ContactsList = () => {
 									<Avatar className="h-4 w-4 mr-1">
 										<AvatarImage src={contact.assigned_to?.avatar} />
 										<AvatarFallback className="text-xs">
-											{contact.assigned_to?.name
+											{/* {contact.assigned_to?.name
 												.split(" ")
 												.map((n) => n[0])
-												.join("")}
+												.join("")} */}
 										</AvatarFallback>
 									</Avatar>
 									<span className="text-xs text-gray-500">
@@ -173,8 +173,8 @@ export const ContactsList = () => {
 					</button>
 				))}
 			</div>
-
-			<div className="">
+			
+			<div className="h-auto flex flex-col-reverse">
 				<UserProfile />
 			</div>
 		</div>

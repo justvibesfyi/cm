@@ -1,0 +1,34 @@
+### Get notes
+GET http://localhost:5173/api/notes/customer?customer_id=1
+Content-Type: application/json
+Cookie: session=5f789bf0-579f-4fb1-ac8b-3202e16dbd06
+
+
+### Create a new note
+POST http://localhost:5173/api/notes/add
+Content-Type: application/json
+Cookie: session=5f789bf0-579f-4fb1-ac8b-3202e16dbd06
+
+{
+  "customer_id": 1,
+  "text": "This is a test note for customer 1"
+}
+
+### Delete note
+DELETE http://localhost:5173/api/notes/note
+Content-Type: application/json
+Cookie: session=5f789bf0-579f-4fb1-ac8b-3202e16dbd06
+
+{
+  "note_id": 1
+}
+
+### Update note ID 1
+PUT http://localhost:5173/api/notes/note
+Content-Type: application/json
+Cookie: session=5f789bf0-579f-4fb1-ac8b-3202e16dbd06
+
+{
+  "note_id": 1,
+  "text": "This is an updated note text2"
+}

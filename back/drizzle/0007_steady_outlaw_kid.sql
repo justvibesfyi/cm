@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `idx_note_employee` ON `note_update` (`note_id`,`employee_id`);

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import { db } from "../db/db";
 import { employee } from "../db/schema";
 import type { Employee } from "../types";
@@ -57,11 +57,18 @@ const useEmployee = () => {
             return userId;
         },
         removeEmployee: async (id: string, company_id: number) => {
-            const count = await db
+            const [deletedEmployee] = await db
                 .delete(employee)
-                .where(and(eq(employee.id, id), eq(employee.company_id, company_id)));
+                .where(and(eq(employee.id, id), eq(employee.company_id, company_id)))
+                .returning();
 
-            return count > 0;
+            return deletedEmployee || null;
+        },
+        getAllEmployees: async (company_id: number) => {
+            const employees = await db.select()
+                .from(employee)
+                .where(eq(employee.company_id, company_id));
+            return employees as Employee[];
         }
     }
 }

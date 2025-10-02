@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, unique, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const authCode = sqliteTable("auth_code", {
     id: integer().primaryKey({ autoIncrement: true }),
@@ -228,8 +228,6 @@ export const note = sqliteTable("note", {
         .notNull()
         .references(() => customer.id, { onDelete: "cascade" }),
     text: text().notNull(),
-    created_at: text().default(sql`CURRENT_TIMESTAMP`),
-    updated_at: text().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const noteRelations = relations(note, ({ one, many }) => ({
@@ -248,9 +246,10 @@ export const noteUpdate = sqliteTable("note_update", {
     employee_id: text()
         .notNull()
         .references(() => employee.id),
-    action: text({ enum: ["created", "updated"] }).notNull(),
-    created_at: text().default(sql`CURRENT_TIMESTAMP`),
-});
+    updated_at: text().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+    uniqueIndex("idx_note_employee").on(table.note_id, table.employee_id),
+]);
 
 export const noteUpdateRelations = relations(noteUpdate, ({ one }) => ({
     note: one(note, {

@@ -2,8 +2,6 @@ import {
 	Building,
 	Calendar,
 	Check,
-	ChevronRight,
-	Clock,
 	Edit3,
 	Globe,
 	MapPin,
@@ -17,7 +15,8 @@ import {
 	X,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,10 +28,12 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { cn, getEmployeeFullName, getEmployeeInitials } from "@/lib/utils";
 import { useChat } from "@/providers/chat";
 
 interface Note {
@@ -52,29 +53,125 @@ interface Note {
 	};
 }
 
-interface CustomerInfo {
-	platform: string;
-	username: string;
-	phone: string;
-	assignedEmployee: {
-		id: string;
-		name: string;
-		avatar: string;
-		status: "online" | "away" | "offline";
-	};
-	location: {
-		city: string;
-		country: string;
-		countryCode: string;
-		timezone: string;
-	};
-	device: {
-		type: string;
-		os: string;
-		browser: string;
-	};
-	ipAddress: string;
+type CustomerProperty = "country" | "city" | "device" | "ip";
+
+const updateCustomerProperty = async (
+	customer_id: number,
+	property: CustomerProperty,
+	value: string | null,
+) => {
+	const res = await api.customer["update-property"].$post({
+		json: {
+			customer_id,
+			property,
+			value,
+		},
+	});
+
+	if (!res.ok) {
+		throw new Error("Unable to update customer property");
+	}
+
+	return true;
+};
+
+const putAssignCustomer = async (
+	customer_id: number,
+	employee_id: string | null,
+) => {
+	const res = await api.customer["assign-employee"].$post({
+		json: {
+			customer_id,
+			employee_id,
+		},
+	});
+
+	if (!res.ok) {
+		throw new Error("Unable to assign customer");
+	}
+
+	return true;
+};
+
+interface PropertyFieldProps {
+	property: CustomerProperty;
+	value: string | null;
+	label: string;
+	placeholder: string;
+	isEditing: boolean;
+	propertyValue: string;
+	onEdit: (property: CustomerProperty) => void;
+	onSave: () => void;
+	onCancel: () => void;
+	onValueChange: (value: string) => void;
 }
+
+const PropertyField: React.FC<PropertyFieldProps> = ({
+	property,
+	value,
+	label,
+	placeholder,
+	isEditing,
+	propertyValue,
+	onEdit,
+	onSave,
+	onCancel,
+	onValueChange,
+}) => {
+	const isEmpty = !value;
+
+	return (
+		<div className="flex items-center justify-between group">
+			<span className="text-sm text-gray-600 flex-1">
+				{isEditing ? (
+					<div className="flex items-center gap-2">
+						<Input
+							value={propertyValue}
+							onChange={(e) => onValueChange(e.target.value)}
+							placeholder={placeholder}
+							className="h-7 text-sm"
+							autoFocus
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									onSave();
+								} else if (e.key === "Escape") {
+									onCancel();
+								}
+							}}
+						/>
+						<Button size="sm" onClick={onSave} className="h-7 px-2">
+							<Check className="h-3 w-3" />
+						</Button>
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={onCancel}
+							className="h-7 px-2"
+						>
+							<X className="h-3 w-3" />
+						</Button>
+					</div>
+				) : (
+					<div className="flex items-center justify-between w-full">
+						<span className={cn(isEmpty && "text-gray-400")}>
+							{value || `No ${label.toLowerCase()}`}
+						</span>
+						{isEmpty && (
+							<Button
+								size="sm"
+								variant="ghost"
+								onClick={() => onEdit(property)}
+								className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+							>
+								<Plus className="h-3 w-3" />
+							</Button>
+						)}
+					</div>
+				)}
+			</span>
+		</div>
+	);
+};
 
 const CustomerSupportSidebar: React.FC = () => {
 	const [isMobileOpen, setIsMobileOpen] = useState(true);
@@ -110,10 +207,12 @@ const CustomerSupportSidebar: React.FC = () => {
 	const [newNoteContent, setNewNoteContent] = useState("");
 	const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 	const [editingContent, setEditingContent] = useState("");
-	const [localTime, setLocalTime] = useState("");
 	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+	const [editingProperty, setEditingProperty] =
+		useState<CustomerProperty | null>(null);
+	const [propertyValue, setPropertyValue] = useState("");
 
-	const { selectedConvo: customerInfo } = useChat();
+	const { selectedConvo: customerInfo, employees } = useChat();
 
 	if (!customerInfo) {
 		return null;
@@ -191,9 +290,42 @@ const CustomerSupportSidebar: React.FC = () => {
 		setNotes(notes.filter((note) => note.id !== noteId));
 	};
 
+	const handleEditProperty = (property: CustomerProperty) => {
+		const currentValue = customerInfo[property] || "";
+		setPropertyValue(currentValue);
+		setEditingProperty(property);
+	};
+
+	const handleSaveProperty = async () => {
+		if (!editingProperty || !customerInfo) return;
+
+		try {
+			await updateCustomerProperty(
+				customerInfo.id,
+				editingProperty,
+				propertyValue.trim() || null,
+			);
+
+			// Update local state to reflect the change
+			customerInfo[editingProperty] = propertyValue.trim() || null;
+
+			toast.success(
+				`${editingProperty.charAt(0).toUpperCase() + editingProperty.slice(1)} updated successfully`,
+			);
+			setEditingProperty(null);
+			setPropertyValue("");
+		} catch {
+			toast.error(`Failed to update ${editingProperty}`);
+		}
+	};
+
+	const handleCancelPropertyEdit = () => {
+		setEditingProperty(null);
+		setPropertyValue("");
+	};
+
 	const getFlagEmoji = (countryCode: string | null) => {
-		if(!countryCode)
-			return '🌐';
+		if (!countryCode) return "🌐";
 
 		const codePoints = countryCode
 			.toUpperCase()
@@ -202,17 +334,74 @@ const CustomerSupportSidebar: React.FC = () => {
 		return String.fromCodePoint(...codePoints);
 	};
 
-	const getStatusColor = (status: "online" | "away" | "offline") => {
-		switch (status) {
-			case "online":
-				return "bg-green-500";
-			case "away":
-				return "bg-yellow-500";
-			case "offline":
-				return "bg-gray-400";
-			default:
-				return "bg-gray-400";
-		}
+	const assignCustomerTo = async (employeeId: string | null) => {
+		await putAssignCustomer(customerInfo.id, employeeId);
+	};
+
+	const PropertyField: React.FC<{
+		property: CustomerProperty;
+		value: string | null;
+		label: string;
+		placeholder: string;
+	}> = ({ property, value, label, placeholder }) => {
+		const isEditing = editingProperty === property;
+		const isEmpty = !value;
+
+		return (
+			<div className="flex items-center justify-between group">
+				<span className="text-sm text-gray-600 flex-1">
+					{isEditing ? (
+						<div className="flex items-center gap-2">
+							<Input
+								value={propertyValue}
+								onChange={(e) => setPropertyValue(e.target.value)}
+								placeholder={placeholder}
+								className="h-7 text-sm"
+								autoFocus
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										handleSaveProperty();
+									} else if (e.key === "Escape") {
+										handleCancelPropertyEdit();
+									}
+								}}
+							/>
+							<Button
+								size="sm"
+								onClick={handleSaveProperty}
+								className="h-7 px-2"
+							>
+								<Check className="h-3 w-3" />
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={handleCancelPropertyEdit}
+								className="h-7 px-2"
+							>
+								<X className="h-3 w-3" />
+							</Button>
+						</div>
+					) : (
+						<div className="flex items-center justify-between w-full">
+							<span className={cn(isEmpty && "text-gray-400")}>
+								{value || `No ${label.toLowerCase()}`}
+							</span>
+							{isEmpty && (
+								<Button
+									size="sm"
+									variant="ghost"
+									onClick={() => handleEditProperty(property)}
+									className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+								>
+									<Plus className="h-3 w-3" />
+								</Button>
+							)}
+						</div>
+					)}
+				</span>
+			</div>
+		);
 	};
 
 	const sidebarContent = (
@@ -248,7 +437,7 @@ const CustomerSupportSidebar: React.FC = () => {
 						</div>
 						<div className="flex items-center gap-2 text-sm text-gray-600">
 							<Phone className="h-3 w-3" />
-							<span>{customerInfo.phone ?? '-'}</span>
+							<span>{customerInfo.phone ?? "-"}</span>
 						</div>
 					</div>
 				</div>
@@ -261,34 +450,33 @@ const CustomerSupportSidebar: React.FC = () => {
 							Assigned To
 						</span>
 					</div>
-					{customerInfo.assignedEmployee ? (
+					{customerInfo.assigned_to ? (
 						<div className="ml-6 flex items-center gap-3">
 							<div className="relative">
 								<Avatar className="h-8 w-8">
-									<AvatarImage src={customerInfo.assignedEmployee.avatar} />
-									<AvatarFallback>SJ</AvatarFallback>
+									<AvatarImage src={customerInfo.assigned_to} />
+									<AvatarFallback>
+										{customerInfo.assigned_to.slice(0, 2).toUpperCase()}
+									</AvatarFallback>
 								</Avatar>
-								<div
-									className={cn(
-										"absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white",
-										getStatusColor(customerInfo.assignedEmployee.status),
-									)}
-								/>
+								<div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-green-500" />
 							</div>
 							<div>
 								<p className="text-sm font-medium text-gray-900">
-									{customerInfo.assignedEmployee.name}
+									{customerInfo.assigned_to}
 								</p>
-								<p className="text-xs text-gray-500 capitalize">
-									{customerInfo.assignedEmployee.status}
-								</p>
+								<p className="text-xs text-gray-500">Assigned</p>
 							</div>
 						</div>
 					) : (
 						<div className="ml-6">
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button variant="outline" size="sm" className="w-full justify-start">
+									<Button
+										variant="outline"
+										size="sm"
+										className="w-full justify-start"
+									>
 										<UserPlus className="h-4 w-4 mr-2" />
 										Assign to team member
 									</Button>
@@ -296,24 +484,19 @@ const CustomerSupportSidebar: React.FC = () => {
 								<DropdownMenuContent align="start" className="w-56">
 									<DropdownMenuLabel>Available Team Members</DropdownMenuLabel>
 									<DropdownMenuSeparator />
-									<DropdownMenuItem>
-										<Avatar className="h-6 w-6 mr-2">
-											<AvatarFallback>JD</AvatarFallback>
-										</Avatar>
-										John Doe
-									</DropdownMenuItem>
-									<DropdownMenuItem>
-										<Avatar className="h-6 w-6 mr-2">
-											<AvatarFallback>SM</AvatarFallback>
-										</Avatar>
-										Sarah Miller
-									</DropdownMenuItem>
-									<DropdownMenuItem>
-										<Avatar className="h-6 w-6 mr-2">
-											<AvatarFallback>MJ</AvatarFallback>
-										</Avatar>
-										Mike Johnson
-									</DropdownMenuItem>
+									{employees.map((e) => (
+										<DropdownMenuItem
+											key={e.id}
+											onClick={() => assignCustomerTo(e.id)}
+										>
+											<Avatar className="h-6 w-6 mr-2">
+												<AvatarFallback>
+													{getEmployeeInitials(e)}
+												</AvatarFallback>
+											</Avatar>
+											{getEmployeeFullName(e)}
+										</DropdownMenuItem>
+									))}
 								</DropdownMenuContent>
 							</DropdownMenu>
 						</div>
@@ -326,18 +509,24 @@ const CustomerSupportSidebar: React.FC = () => {
 						<MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
 						<span className="text-sm font-medium text-gray-700">Location</span>
 					</div>
-					<div className="ml-6 space-y-1">
-						<div className="flex items-center gap-2 text-sm text-gray-600">
-							<span className="text-lg">
-								{getFlagEmoji(customerInfo.country)}
-							</span>
-							<span>
-								{customerInfo.city}, {customerInfo.country}
-							</span>
+					<div className="ml-6 space-y-2">
+						<div className="space-y-1">
+							<div className="text-xs text-gray-500 font-medium">Country</div>
+							<PropertyField
+								property="country"
+								value={customerInfo.country}
+								label="Country"
+								placeholder="Enter country"
+							/>
 						</div>
-						<div className="flex items-center gap-2 text-sm text-gray-600">
-							<Clock className="h-3 w-3" />
-							<span>{localTime} (Local Time)</span>
+						<div className="space-y-1">
+							<div className="text-xs text-gray-500 font-medium">City</div>
+							<PropertyField
+								property="city"
+								value={customerInfo.city}
+								label="City"
+								placeholder="Enter city"
+							/>
 						</div>
 					</div>
 				</div>
@@ -348,8 +537,13 @@ const CustomerSupportSidebar: React.FC = () => {
 						<Smartphone className="h-4 w-4 text-gray-500 flex-shrink-0" />
 						<span className="text-sm font-medium text-gray-700">Device</span>
 					</div>
-					<div className="ml-6 space-y-1 text-sm text-gray-600">
-						<p>{customerInfo.device}</p>
+					<div className="ml-6">
+						<PropertyField
+							property="device"
+							value={customerInfo.device}
+							label="Device"
+							placeholder="Enter device info"
+						/>
 					</div>
 				</div>
 
@@ -361,9 +555,14 @@ const CustomerSupportSidebar: React.FC = () => {
 							IP Address
 						</span>
 					</div>
-					<p className="ml-6 text-sm text-gray-600 font-mono">
-						{customerInfo.ipAddress}
-					</p>
+					<div className="ml-6">
+						<PropertyField
+							property="ip"
+							value={customerInfo.ip}
+							label="IP Address"
+							placeholder="Enter IP address"
+						/>
+					</div>
 				</div>
 
 				{/* Notes Section */}

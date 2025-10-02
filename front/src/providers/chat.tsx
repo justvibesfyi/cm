@@ -1,4 +1,4 @@
-import type { Customer, Message } from "@back/types";
+import type { Customer, Employee, Message } from "@back/types";
 import type React from "react";
 import {
 	createContext,
@@ -17,8 +17,10 @@ export interface ChatState {
 	messages: Message[];
 	sendMessage: (content: string, convo_id: number) => Promise<void>;
 
-	showContacts: boolean,
-	setShowContacts: (val: boolean) => void
+	showContacts: boolean;
+	setShowContacts: (val: boolean) => void;
+
+	employees: Employee[];
 }
 
 const ChatContext = createContext<ChatState | undefined>(undefined);
@@ -33,6 +35,18 @@ const getConvos = async () => {
 
 	const { convos } = await res.json();
 	return convos;
+};
+
+const getEmployees = async () => {
+	const res = await api.employee.all.$get();
+
+	if (!res.ok) {
+		console.error("Failed to fetch employees");
+		return;
+	}
+
+	const { employees } = await res.json();
+	return employees;
 };
 
 const getMessages = async (convoId: number) => {
@@ -69,6 +83,7 @@ export default function ChatProvider({
 	const [convos, setConvos] = useState<Customer[]>([]);
 	const [messages, setMessages] = useState([] as Message[]);
 	const [selectedConvo, setSelectedConvo] = useState<Customer | null>(null);
+	const [employees, setEmployees] = useState<Employee[]>([]);
 
 	const [showContacts, setShowContacts] = useState(true);
 
@@ -115,6 +130,15 @@ export default function ChatProvider({
 				console.error("Failed to fetch conversations:", error);
 			}
 
+			try {
+				const newEmployees = await getEmployees();
+				if (isMounted && newEmployees) {
+					setEmployees(newEmployees);
+				}
+			} catch (error) {
+				console.error("Failed to fetch conversations:", error);
+			}
+
 			if (isMounted) {
 				timeoutId = setTimeout(fetchConvos, 3000);
 			}
@@ -140,7 +164,9 @@ export default function ChatProvider({
 				sendMessage: handleSendMessage,
 
 				showContacts,
-				setShowContacts
+				setShowContacts,
+
+				employees
 			}}
 		>
 			{children}

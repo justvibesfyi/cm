@@ -20,101 +20,8 @@ import { useChat } from "@/providers/chat";
 import CustomerSupportSidebar from "./ChatSidebar";
 import { ContactsList } from "./ContactsList";
 
-// Types for our data structures
-interface Contact {
-	id: string;
-	name: string;
-	avatar: string;
-	platform: string;
-	assignedTo: {
-		id: string;
-		name: string;
-		avatar: string;
-	};
-	lastMessage: string;
-	lastMessageTime: string;
-	unread: number;
-	status: "online" | "away" | "offline";
-}
-
-interface Message {
-	id: string;
-	content: string;
-	sender: "customer" | "employee";
-	senderId: string;
-	senderName: string;
-	senderAvatar: string;
-	timestamp: Date;
-	type: "text" | "image" | "file" | "system";
-	status?: "sent" | "delivered" | "read";
-}
-
-// Mock messages for the selected contact
-const mockMessages: Message[] = [
-	{
-		id: "1",
-		content: "Hi, I need help with my recent order",
-		sender: "customer",
-		senderId: "1",
-		senderName: "John Doe",
-		senderAvatar:
-			"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
-		timestamp: new Date("2024-01-15T10:30:00"),
-		type: "text",
-	},
-	{
-		id: "2",
-		content:
-			"Hello! I'd be happy to help you with your order. Could you please provide your order number?",
-		sender: "employee",
-		senderId: "emp1",
-		senderName: "Sarah Johnson",
-		senderAvatar:
-			"https://images.unsplash.com/photo-1494790108755-2616b612b786?w=32&h=32&fit=crop&crop=face",
-		timestamp: new Date("2024-01-15T10:32:00"),
-		type: "text",
-		status: "read",
-	},
-	{
-		id: "3",
-		content: "Sure, it's #12345",
-		sender: "customer",
-		senderId: "1",
-		senderName: "John Doe",
-		senderAvatar:
-			"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
-		timestamp: new Date("2024-01-15T10:35:00"),
-		type: "text",
-	},
-	{
-		id: "4",
-		content:
-			"Thank you! Let me check that for you. I see your order is currently in transit and should arrive by tomorrow.",
-		sender: "employee",
-		senderId: "emp1",
-		senderName: "Sarah Johnson",
-		senderAvatar:
-			"https://images.unsplash.com/photo-1494790108755-2616b612b786?w=32&h=32&fit=crop&crop=face",
-		timestamp: new Date("2024-01-15T10:38:00"),
-		type: "text",
-		status: "read",
-	},
-	{
-		id: "5",
-		content: "Great, thank you for the quick response!",
-		sender: "customer",
-		senderId: "1",
-		senderName: "John Doe",
-		senderAvatar:
-			"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
-		timestamp: new Date("2024-01-15T10:40:00"),
-		type: "text",
-	},
-];
-
 const ChatApplication: React.FC = () => {
-	const { selectedConvo } = useChat();
-	const [messages, setMessages] = useState<Message[]>(mockMessages);
+	const { selectedConvo, messages } = useChat();
 	const [newMessage, setNewMessage] = useState("");
 	const [showSidebar, setShowSidebar] = useState(true);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -210,7 +117,7 @@ const ChatApplication: React.FC = () => {
 
 								<div>
 									<p className="font-medium text-gray-900">
-										{selectedConvo.name}
+										{selectedConvo.full_name}
 									</p>
 									<p className="text-xs text-gray-500">
 										{selectedConvo.platform} • {selectedConvo.status}
@@ -243,23 +150,19 @@ const ChatApplication: React.FC = () => {
 									key={message.id}
 									className={cn(
 										"flex",
-										message.sender === "employee"
-											? "justify-end"
-											: "justify-start",
+										message.employee_id ? "justify-end" : "justify-start",
 									)}
 								>
 									<div
 										className={cn(
 											"flex max-w-xs lg:max-w-md",
-											message.sender === "employee"
-												? "flex-row-reverse"
-												: "flex-row",
+											message.employee_id ? "flex-row-reverse" : "flex-row",
 										)}
 									>
 										<Avatar className="h-8 w-8 mx-2">
-											<AvatarImage src={message.senderAvatar} />
+											<AvatarImage src={selectedConvo.avatar} />
 											<AvatarFallback className="text-xs">
-												{message.senderName
+												{selectedConvo.full_name
 													.split(" ")
 													.map((n) => n[0])
 													.join("")}
@@ -270,7 +173,7 @@ const ChatApplication: React.FC = () => {
 											<div
 												className={cn(
 													"px-4 py-2 rounded-lg",
-													message.sender === "employee"
+													message.employee_id
 														? "bg-blue-500 text-white"
 														: "bg-gray-100 text-gray-900",
 												)}
@@ -281,13 +184,11 @@ const ChatApplication: React.FC = () => {
 											<div
 												className={cn(
 													"flex items-center mt-1 text-xs text-gray-500",
-													message.sender === "employee"
-														? "justify-end"
-														: "justify-start",
+													message.employee_id ? "justify-end" : "justify-start",
 												)}
 											>
-												<span>{formatTime(message.timestamp)}</span>
-												{message.sender === "employee" && message.status && (
+												<span>{formatTime(new Date(message.created_at!))}</span>
+												{message.employee_id && message.status && (
 													<span className="ml-1">
 														{message.status === "sent" && (
 															<Check className="h-3 w-3 inline" />

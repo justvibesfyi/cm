@@ -42,9 +42,11 @@ export const featureRoutes = new Hono()
 - Services are located in `back/svc/[service].ts`
 
 ## Validation
-- Use Zod schemas for request validation with `zValidator("json", schema)`
+- Use Zod schemas for request validation with `zValidator("json", schema)` for POST/PUT/DELETE
+- Use `zValidator("query", schema)` for GET request query parameters
 - Define schemas at the top of the file before the route definitions
 - Use descriptive schema names (e.g., `updateCompanySchema`, `createUserSchema`)
+- For query params: use `z.coerce.number()` for numeric values, not string transforms
 
 ## Error Handling
 - Return consistent error responses: `c.json({ error: "Message" }, statusCode)`
@@ -84,6 +86,7 @@ export const companyRoutes = new Hono()
 ## Key Rules
 1. All routes must be protected with `requiresAuth`
 2. Database access only through service files in `svc/`
-3. Use Zod validation for all request bodies
+3. Use Zod validation for all request bodies and query parameters
 4. Follow consistent error/success response format
 5. Keep route handlers focused on HTTP concerns, not business logic
+6. Avoid path params - use query params for GET requests, JSON body for POST/PUT/DELETE
